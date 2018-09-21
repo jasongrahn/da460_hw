@@ -1,0 +1,82 @@
+---
+title: "da420_assignment0_grahn"
+author: "jason grahn"
+date: "9/20/2018"
+output: word_document
+---
+
+Handout 0 looks like it's mostly in base-R, so we can jump right in with the first provided command.
+```{r source, include=FALSE}
+library(tidyverse)
+```
+
+#Part1
+```{r}
+source("http://www.openintro.org/stat/data/arbuthnot.R")
+```
+
+##Exercise 1
+What command would you use to extract just the counts of girls baptized?
+###Solution 1
+
+```{r}
+arbuthnot$girls 
+#which provides a pretty poor display so we can use tidy-style with 
+select(arbuthnot, girls) 
+
+#or with...
+arbuthnot %>% 
+  select(girls)
+```
+
+```{r}
+plot(x = arbuthnot$year, y = arbuthnot$girls, type = "l")
+```
+
+##Exercise 2 
+Is there an apparent trend in the number of girls baptized over the years? How would you describe it? 
+###solution 2
+Yes, there appears to be an upward trend in the number of girls baptized over the years for the window of time for which we have data. It drops between 1640 and 1660, but increases sharply thereafter and continues to grow.
+
+##Exercise 3
+Make a plot of the proportion of boys over time. What do you see?
+###Solution 3
+First, the plot:
+```{r}
+plot(arbuthnot$year, arbuthnot$boys / (arbuthnot$boys + arbuthnot$girls), type = "l")
+#but this is really hard to understand / read. So if we use tidyverse...
+arbuthnot %>%
+  mutate(proportion_boys = boys / (boys + girls)) %>%
+  ggplot() +
+  geom_line(aes(year, proportion_boys))
+```
+
+#Part 2
+Repeat all commands with present day birth records.
+
+```{r load present day birth records data}
+source("http://www.openintro.org/stat/data/present.R")
+```
+
+##Questions: 
+
+1. What years are included in this data set? What are the dimensions of the data frame and what are the variable or column names?
+```{r}
+head(present, 5)
+tail(present, 5)
+dim(present)
+```
+The data covers 1940 through 2002. The dimensions are 63 observations by 3 variables. The 3 variables are _year_, _boys_, _girls_. 
+    
+2. How do these counts compare to Arbuthnot’s? Are they on a similar scale?
+```{r}
+summary(head(arbuthnot$girls + arbuthnot$boys, 40) / 
+     head(present$girls + present$boys, 40) 
+     * 100)
+```
+The *Arbuthnot* data is approximately 0.25% of the *Present* data, on average, for a given year. The *Present* data is on a scale much more massive than the *Arbuthnot* data. A likely way to compare these would be log-scale.  
+
+3. Make a plot that displays the boy-to-girl ratio for every year in the data set. What do you see? Does Arbuthnot’s observation about boys being born in greater proportion than girls hold up in the U.S.? Include the plot in your response.
+
+
+4. In what year did we see the most total number of births in the U.S.? You can refer to the help files or the R reference card http://cran.r-project.org/doc/contrib/Short-refcard.pdf to find helpful commands.
