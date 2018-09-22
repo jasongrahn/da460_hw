@@ -47,8 +47,9 @@ plot(arbuthnot$year, arbuthnot$boys / (arbuthnot$boys + arbuthnot$girls), type =
 #but this is really hard to understand / read. So if we use tidyverse...
 arbuthnot %>%
   mutate(proportion_boys = boys / (boys + girls)) %>%
-  ggplot() +
-  geom_line(aes(year, proportion_boys))
+  ggplot(aes(year, proportion_boys)) +
+  geom_line() + 
+  geom_smooth()
 ```
 
 #Part 2
@@ -77,6 +78,24 @@ summary(head(arbuthnot$girls + arbuthnot$boys, 40) /
 The *Arbuthnot* data is approximately 0.25% of the *Present* data, on average, for a given year. The *Present* data is on a scale much more massive than the *Arbuthnot* data. A likely way to compare these would be log-scale.  
 
 3. Make a plot that displays the boy-to-girl ratio for every year in the data set. What do you see? Does Arbuthnot’s observation about boys being born in greater proportion than girls hold up in the U.S.? Include the plot in your response.
+```{r}
+plot(present$year, present$boys / (present$boys + present$girls), type = "l")
 
+#The joy of the tidyverse is not JUST more readable code, but less code duplication.
+present %>%
+  mutate(prop_boys_present = boys / (boys + girls)) %>%
+  ggplot(aes(year, prop_boys_present)) +
+  geom_line() +
+  geom_smooth()
+```
+
+We see the proportion of boys is generally around the same values in the Present data that we do in the Arbuthnot data. In contrast to the Arbuthnot data, we see less variation in Present data _and_ we see a significant downward trend. The Arbuthnot data showed larger variation and a generally flat trend.
 
 4. In what year did we see the most total number of births in the U.S.? You can refer to the help files or the R reference card http://cran.r-project.org/doc/contrib/Short-refcard.pdf to find helpful commands.
+
+```{r}
+present %>% 
+  mutate(total = girls + boys) %>% 
+  filter(total == max(total)) 
+```
+The highest year was 1961. 
