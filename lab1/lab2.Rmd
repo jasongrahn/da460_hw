@@ -65,12 +65,12 @@ cdc %>%
   describe(IQR = TRUE)
 ```
 
-Compute the relative frequency distribution for gender and exerany. 
+##Compute the relative frequency distribution for gender and exerany. 
 ```{r}
 table(cdc$gender)/nrow(cdc)
 ```
 
-How many males are in the sample? 
+##How many males are in the sample? 
 ```{r HOW MANY MALES}
 cdc %>%  
   select(gender) %>% 
@@ -82,7 +82,7 @@ table(cdc$gender)
 #which answers for both genders
 ```
 
-What proportion of the sample reports being in *excellent* health?
+##What proportion of the sample reports being in *excellent* health?
 ```{r}
 cdc %>% 
   select(genhlth) %>% 
@@ -93,6 +93,28 @@ cdc %>%
 
 #which is maybe a little bit long winded, so in base-R we can create the same using a couple of commands
 table(cdc$genhlth)/nrow(cdc) 
+```
+
+#Exercise 3
+
+##What does the mosiac plot reveal about smoking habits and gender?
+```{r}
+mosaicplot(table(cdc$gender,cdc$smoke100))
+```
+Mosaic plots aren't great for this because the perception of sizes are hard to identify. This would be better as a clustered bar graph. That said, it appears that Men more often report having smoked at least 100 cigarettes.
+
+#Exercise 4
+
+##Create a new object called under23_and_smoke that contains all observations of respondents under the age of 23 that have smoked 100 cigarettes in their lifetime. Write the command you used to create the new object as the answer to this exercise.
+```{r}
+under23_and_smoke_tidy <- 
+  cdc %>% 
+  filter(age < 23,
+         smoke100 == 1) 
+
+#or we could do this with base-R like 
+under23_and_smoke <- 
+  subset(cdc, age < 23 & smoke100 == 1)
 ```
 
 
