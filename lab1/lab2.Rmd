@@ -1,0 +1,98 @@
+---
+title: "da420_lab1_grahn"
+author: "jason grahn"
+date: "9/23/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(psych)
+```
+
+##Loading data
+```{r load source data}
+source('http://www.openintro.org/stat/data/cdc.R') 
+```
+
+#Exercise 1: 
+
+##1. how many cases are there in this dataset?
+```{r observation count}
+nrow(cdc)
+```
+
+##2. How many variables in this dataset? 
+```{r variable count}
+ncol(cdc)
+```
+
+##3. For each variable, identify its data type.
+```{r}
+#but even better than running nrow() and ncol() is glimpse() because it shows both of those AND information about each of the variables
+glimpse(cdc)
+```
+
+genhlth is categorical 
+exerany is categorical (binary)
+hlthplan iscategorical (binary)
+smoke100 is categorical (binary)
+height is continuous and numerical
+weight is continuous and numerical
+wtdesire is continuous and numerical
+age is continuous and numerical
+gender is categorical
+
+#Exercise 2
+
+##Create a numerical summary for height and age, and compute the interquartile range for each. 
+```{r height summarization}
+#the summary of height using base-R
+summary(cdc$height)
+```
+The IQR is `r (70 - 64) * 1.5`.
+
+```{r age summarization}
+#the summary of age using base-R
+summary(cdc$age)
+```
+the IQR is `r (57 - 31) * 1.5`.
+
+```{r doing this the easy way}
+#or if we want to gather summary stats for both at once, we can use tidyverse dplyr select with psych::describe() 
+cdc %>% 
+  select(height, age) %>% 
+  describe(IQR = TRUE)
+```
+
+Compute the relative frequency distribution for gender and exerany. 
+```{r}
+table(cdc$gender)/nrow(cdc)
+```
+
+How many males are in the sample? 
+```{r HOW MANY MALES}
+cdc %>%  
+  select(gender) %>% 
+  filter(gender == "m") %>% 
+  summarize(count_of_males = n())
+
+#or
+table(cdc$gender)
+#which answers for both genders
+```
+
+What proportion of the sample reports being in *excellent* health?
+```{r}
+cdc %>% 
+  select(genhlth) %>% 
+  group_by(genhlth) %>% 
+  summarise(health_count = n()) %>%
+  mutate(freq = health_count / nrow(cdc) ) %>% 
+  filter(genhlth == "excellent")
+
+#which is maybe a little bit long winded, so in base-R we can create the same using a couple of commands
+table(cdc$genhlth)/nrow(cdc) 
+```
+
+
