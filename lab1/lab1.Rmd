@@ -118,7 +118,7 @@ under23_and_smoke <-
 ```
 
 #Exercise 5
-##What does this box plot show? Pick another categorical variable from the data set and see how it relates to BMI. List the variable you chose, why you might think it would have a relationship to BMI, and indicate what the figure seems to suggest.
+##What does this box plot show? 
 ```{r}
 bmi <- (cdc$weight / cdc$height^2) * 703
 boxplot(bmi ~ cdc$genhlth)
@@ -132,11 +132,14 @@ cdc %>%
 ```
 The initial boxplot shows a relationship between the general feeling of health and the distribution of those people. We see the median BMI appears to be rising as the health decreases.
 
+##Pick another categorical variable from the data set and see how it relates to BMI. List the variable you chose, why you might think it would have a relationship to BMI, and indicate what the figure seems to suggest.
 ```{r}
 cdc %>% 
   mutate(bmi = weight / height^2 * 703) %>% 
   #then add the plot right to the data
   ggplot(aes(x = gender, y = bmi)) + 
-  geom_boxplot() 
+  geom_boxplot() +
+  theme_light()
 ```
 
+The variable I chose was Gender. I selected this on the expectation that there would be a difference between the median and spread of values of the two provided genders. When we review the boxplot, we can see yes, there is a difference between the median and spread, with males having a higher median with a smaller spread. At this level of analysis this might indicate that males, while having a higher BMI, stay more stable as BMI changes relative to age. 
