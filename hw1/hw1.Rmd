@@ -14,7 +14,92 @@ library(psych)
 Based on Handout 1 R (use the same source data), apply R to answer the following questions. Make sure you include the command line/code, then paste relevant output/results, and also comment on the output/results as needed (to answer the questions).
 
 ```{r load source data}
-
+source('http://www.openintro.org/stat/data/cdc.R') 
 ```
 
-#1 Make a scatterplot of weight versus desired weight. Describe the relationship between these two variables.
+##1 Make a scatterplot of weight versus desired weight. Describe the relationship between these two variables.
+```{r scatterplot weight and desired weight}
+cdc %>% 
+  ggplot(aes(wtdesire, weight)) +
+  geom_point(alpha = 0.5) +
+  theme_light()
+
+#or in base-R
+plot(cdc$wtdesire, cdc$weight, type = "p")
+```
+There appears to be a generally strong positive relationship between weight and wtdesire. As weight increases, the wtdesire of the individual increases as well.
+
+##2. Let’s consider a new variable: the difference between desired weight (wtdesire) and current weight (weight). Create this new variable by subtracting the two columns in the data frame and assigning them to a new object called wdiff. 
+```{r make new variable wdiff, message=FALSE, warning=FALSE, paged.print=FALSE}
+cdc <- cdc %>% 
+  mutate(wdiff = wtdesire - weight)
+
+#or the less useful way in base-R
+head(wdiff <- (cdc$wtdesire - cdc$weight),10)
+```
+It's a bit silly to make these a new object all on their own. Using `mutate()` we can create this variable inside the pre-existing dataframe. 
+
+##3. What type of data is wdiff? If an observation wdiff is 0, what does this mean about the person’s weight and desired weight? What if wdiff is positive or negative? 
+`Wdiff` is continuous and numerical. If an observation of `wdiff` is zero, it means the sample is at their desired weight. If `wdiff` is negative, it means the observation wants to lose weight, a positive `wdiff` means the observation wants to gain weight.
+
+##4. Describe the distribution of wdiff in terms of its center, shape, and spread, including any plots you use. What does this tell us about how people feel about their current weight?
+```{r wdiff distrubution}
+#first some stats around wdiff
+cdc %>% 
+  select(wdiff) %>% 
+  describe()
+
+#those min and max are pretty huge numbers. confirm?
+cdc %>% 
+  filter((wdiff == max(wdiff) | wdiff == min(wdiff)))
+
+#looking at distribution through a histogram
+cdc %>% 
+  ggplot() + 
+  geom_histogram(aes(wdiff), bins = 50) +
+#needing to use logscale for Y becase the high peaks
+  scale_y_log10() +
+  theme_light()
+
+#or, that boxplot in base-R
+boxplot(wdiff)
+```
+
+##5. Using numerical summaries and a side-by-side box plot, determine if men tend to view their weight differently than women. 
+```{r wdiff gender distributions}
+#for males
+cdc %>% 
+  filter(gender == "m") %>% 
+  select(wdiff) %>% 
+  describe(IQR = TRUE)
+
+#for females
+cdc %>% 
+  filter(gender == "f") %>% 
+  select(wdiff) %>% 
+  describe(IQR = TRUE)
+
+#and the side-by-side boxplot
+cdc %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = gender, y = wdiff)) 
+```
+With minor exception, females generally want to lose weight. Males have an larger propensity for gaining weight.
+
+##6. Now it’s time to get creative. Find the mean and standard deviation of weight and determine what proportion of the weights are within one standard deviation of the mean.
+```{r find and plot mean and sd}
+normweight <- cdc %>% 
+  select(weight) %>% 
+  mutate(mean = mean(weight),
+         sd = sd(weight),
+         norm = round((weight - mean)/sd,2),
+         sd1 = if_else(norm >-1 & norm <1, TRUE, FALSE)
+           )
+         
+ggplot(normweight) + 
+  geom_histogram(aes(x = norm, fill = sd1))
+
+table(normweight$sd1)/nrow(normweight)*100
+```
+
+The mean weight is `r mean(cdc$weight)` and the standard deviation is `r sd(cdc$weight)`. 70.76% of the weights fall within 1 standard deviation of the mean.
