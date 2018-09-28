@@ -1,0 +1,20 @@
+---
+title: "da460_assignment1_grahn"
+author: "jason grahn"
+date: "9/27/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(psych)
+```
+
+#Part1
+Based on Handout 1 R (use the same source data), apply R to answer the following questions. Make sure you include the command line/code, then paste relevant output/results, and also comment on the output/results as needed (to answer the questions).
+
+```{r load source data}
+
+```
+
+#1 Make a scatterplot of weight versus desired weight. Describe the relationship between these two variables.
