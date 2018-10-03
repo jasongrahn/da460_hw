@@ -1,0 +1,83 @@
+---
+title: "da460_lab2_grahn"
+author: "jason grahn"
+date: "10/2/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r data load}
+download.file("http://www.openintro.org/stat/data/kobe.RData", destfile = "kobe.RData")
+load("kobe.RData")
+head(kobe)
+```
+
+##Exercise 1
+
+###What does a streak length of 1 mean, i.e. how many hits and misses are in a streak of 1? What about a streak length of 0?
+```{r commands from the handout}
+#head of the basket values
+kobe$basket[1:9]
+```
+
+A streak length of 1 means that Kobe made one basket and it was immediately followed by a miss; 1 hit and 1 miss. A streak length of zero is a miss that follows another miss.
+
+##Exercise 2
+
+###Describe the distribution of Kobe’s streak lengths from the 2009 NBA finals. What was his typical streak length? How long was his longest streak of baskets?
+
+```{r prep and plot streak data}
+#run the calc_streak function to generate the kobe_steak dataset
+kobe_streak <- calc_streak(kobe$basket)
+
+#provide a barplot of the kobe_streak data
+barplot(table(kobe_streak))
+
+#or do the same tidy style
+tibble(kobe_streak) %>% 
+  ggplot(aes(x = kobe_streak)) +
+  geom_bar()
+
+#but really this is better as a density plot
+tibble(kobe_streak) %>% 
+  ggplot(aes(x = kobe_streak)) +
+  geom_density()
+```
+
+I dont think a streak of *zero* should count, so his typical streak length is *1*. His longest streak is 4.
+
+##Exercise 3
+###In your simulation of flipping the unfair coin 100 times, how many flips came up heads?
+
+```{r run the sample 100 times}
+#build the outcomes vector
+outcomes <- c("heads", "tails")
+
+#build a dataset of a fair coin toss
+sim_fair_coin <- sample(outcomes, size = 100, replace = TRUE)
+table(sim_fair_coin)
+
+#build a dataset of an UNFAIR coin toss
+sim_unfair_coin <- sample(outcomes, size = 100, replace = TRUE, prob = c(0.2, 0.8))
+table(sim_unfair_coin) 
+```
+
+In the unfair coin toss, 26 flips came back heads. 
+
+##Exercise 4
+###What change needs to be made to the sample function so that it reflects a shooting percentage of 45%? Make this adjustment, then run a simulation to sample 133 shots. Assign the output of this simulation to a new object called sim_basket.
+
+```{r}
+sim_basket <- sample(outcomes, size = 133, replace = TRUE, prob = c(0.45, (1-.45)))
+table(sim_basket) 
+```
+
+```{r comparing kobe against simulated opponent}
+table(kobe$basket)
+table(sim_basket)
+```
+
