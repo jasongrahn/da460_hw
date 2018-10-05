@@ -1,7 +1,7 @@
 ---
-title: "da460_lab2_grahn"
+title: "da460_assignment2_grahn"
 author: "jason grahn"
-date: "10/2/2018"
+date: "`r Sys.Date()`"
 output: word_document
 ---
 
@@ -13,42 +13,90 @@ library(tidyverse)
 ```{r data load}
 download.file("http://www.openintro.org/stat/data/kobe.RData", destfile = "kobe.RData")
 load("kobe.RData")
-head(kobe)
+head(kobe,5)
 ```
 
-```{r commands from the handout}
-#head of the basket values
-kobe$basket[1:9]
 
-#run the calc_streak function to generate the kobe_steak dataset
-kobe_streak <- calc_streak(kobe$basket)
-
-#provide a barplot of the kobe_streak data
-barplot(table(kobe_streak))
-
-#or do the same tidy style
-tibble(kobe_streak) %>% 
-  ggplot(aes(x = kobe_streak)) +
-  geom_bar()
-```
-##Exercise 1
-
-#What does a streak length of 1 mean, i.e. how many hits and misses are in a streak of 1? What about a streak length of 0?
-
-A streak length of 1 means that Kobe made one basket and it was immediately followed by a miss; 1 hit and 1 miss. A streak length of zero is a miss that follows another miss.
-
-
-Notes from the handout: 
-"For this lab, we define the length of a shooting streak to be the _number of consecutive baskets made until a miss occurs_."
-
-
-#Answer these: 
 ##1. Describe the distribution of streak lengths. What is the typical streak length for this simulated independent shooter with a 45% shooting percentage? How long is the player’s longest streak of baskets in 133 shots?
+
+```{r}
+#first we have to generate the data for the simulated player
+#first the outcomes vector
+outcomes <- c("H", "M")
+
+#then run the shooting simulation with the 45% hit rate
+sim_basket <- sample(outcomes, size = 133, replace = TRUE, prob = c(0.45, (1-.45)))
+
+#role that into a table
+tibble(sim_basket) 
+
+##run the calc_streak function to generate the kobe_steak dataset
+sim_streak <- calc_streak(sim_basket)
+
+#make a barchart and save it for reference
+sim_bar <- tibble(sim_streak) %>% 
+  ggplot() +
+  geom_bar(aes(x = sim_streak))
+
+#display that barchart
+sim_bar 
+
+#and lets save those counts to their own dataframe
+sim_aggregate <- tibble(sim_streak) %>% 
+  group_by(sim_streak) %>% 
+  summarise(sim_count = n())
+```
+
+The distrubution is right skewed with a maximum streak of 6. The typical streak length, if we don't include streaks of zero, is _one_. 
 
 ##2. If you were to run the simulation of the independent shooter a second time, how would you expect its streak distribution to compare to the distribution from the question above? Exactly the same? Somewhat similar? Totally different? Explain your reasoning.
 
+No code is required to answer this question. Running the simulation a second time will still maintain the right skewness, but the individual values of the streaks will change. It would likely appear similar, but with different values for each of the streak lengths. This is because the simulation doesn't include proportions of streak lengths, just random selections of 'hit' or 'miss'.
+
 ##3. How does Kobe Bryant’s distribution of streak lengths compare to the distribution of streak lengths for the simulated shooter? Using this comparison, do you have evidence that the hot hand model fits Kobe’s shooting patterns? Explain.
-```{r}
-kobe$basket[1:9]
+
+```{r commands from the handout}
+#run the calc_streak function to generate the kobe_steak dataset
+kobe_streak <- calc_streak(kobe$basket)
+
+#and let's plot that, saving the bar chart
+kobe_bar <- tibble(kobe_streak) %>% 
+  ggplot(aes(x = kobe_streak)) +
+  geom_bar()
+
+#show that plot
+kobe_bar
+
+#but more importantly, we need to see the counts of each next to each other.
+kobe_aggregate <- tibble(kobe_streak) %>% 
+  group_by(kobe_streak) %>% 
+  summarise(kobe_count = n()) %>% 
+  rename(streak_length = kobe_streak)
+
+#save the two tables as one, so we can compare
+streak_difference <- sim_aggregate %>% 
+  rename(streak_length = sim_streak) %>% 
+  full_join(kobe_aggregate) %>% 
+  replace_na(list(kobe_count = 0)) %>% 
+  replace_na(list(sim_count = 0)) %>% 
+  mutate(streak_delta = kobe_count - sim_count)
+
+streak_difference
+
+sim_bar
+kobe_bar
+#and plot a viz of the difference
+ggplot(streak_difference) +
+  geom_bar(aes(x = streak_length, y = streak_delta), stat = "identity") +
+  labs(title = "Kobe versus Simulation",
+       subtitle = "positive values indicate Kobe did better") + 
+  theme_light()
 ```
 
+###How does Kobe Bryant’s distribution of streak lengths compare to the distribution of streak lengths for the simulated shooter? 
+
+They are both right-skewed streaks for sure, with 1-hit streaks making the longest (with zero-streak lengths excluded). The simulated player has a longer right tail than Kobe because it has streaks that lasted longer, _and_ it has less streaks of zero.
+
+###Using this comparison, do you have evidence that the hot hand model fits Kobe’s shooting patterns? Explain.
+
+The simulated model has a higher streak maximum and did quite a bit better at 2-run streaks. If the simulated "hot hand" model were more like Kobe, we would see less streaks last as long. From this simple analysis, it doesn't seem like we have evidence that the hot hand simulation fit's Kobe's shooting patterns, it's too good!
