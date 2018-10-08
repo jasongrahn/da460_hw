@@ -1,0 +1,118 @@
+---
+title: "da460_lab3_grahn"
+author: "jason grahn"
+date: "10/8/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r data download, include=FALSE}
+download.file("http://www.openintro.org/stat/data/bdims.RData", destfile = "bdims.RData")
+load("bdims.RData")
+```
+
+And we'll also take the subsets from the lab handout, but make them using tidy verbs.
+```{r}
+#filter the bdims data for sex == 1 because those are males.
+#mdims <- subset(bdims, sex == 1)
+mdims <- bdims %>% 
+  filter(sex == 1)
+
+#filter the bdims data for sex == 0 because those are females
+#fdims <- subset(bdims, sex == 0)
+fdims <- bdims %>% 
+  filter(sex == 0)
+```
+
+#Exercise 1
+
+## Make a histogram of men’s heights and a histogram of women’s heights. How would you compare the various aspects of the two distributions?
+```{r}
+#likely the instruction wants us to do this with each of the datasets, but we can do this with GGplot in one swoop.
+bdims %>% 
+  ggplot(aes(x = hgt)) + 
+  geom_histogram(bins = 20) + 
+  facet_grid(. ~ sex) +
+  labs(title = "Histograms of height by Gender",
+       subtitle = "0 = female, 1 = male")
+```
+
+Both histograms seem to have a unimodal distribution, but the female histogram is a bit more smooth, though it does have a less "peaky" high-point. The histogram for men is distinctly shifted to higher numbers. Simply looking at the graphs, the spread appears similar, without any particular skewness to either.
+
+# Exercise 2
+```{r find the mean and standard deviation of female heights}
+fhgtmean <- mean(fdims$hgt)
+fhgtsd   <- sd(fdims$hgt)
+```
+
+```{r baseR density histograms with density curve}
+hist(fdims$hgt, probability = TRUE)
+x <- 140:190
+y <- dnorm(x = x, mean = fhgtmean, sd = fhgtsd)
+lines(x = x, y = y, col = "blue")
+```
+
+```{r}
+ggplot(fdims, aes(x=hgt, y=..density..)) + 
+  geom_histogram(position="identity", bins = 8) + 
+  geom_density() +
+  labs(title = "Histogram of female height")
+```
+
+## Based on the this plot, does it appear that the data follow a nearly normal distribution?
+
+Yes, based on the density histogram, these appear to nearly follow a normal distribution, though not perfect. 
+
+# Exercise 3
+
+## Make a normal probability plot of sim_norm. Do all of the points fall on the line? How does this plot compare to the probability plot for the real data?
+
+```{r}
+#this is how we do normal probability plots in baseR.
+#qqnorm(fdims$hgt)
+#qqline(fdims$hgt)
+
+#simulating a normal distribution, per the lab
+sim_norm <- rnorm(n = length(fdims$hgt), mean = fhgtmean, sd = fhgtsd)
+
+#and here's how we can do the QQplot in tidy; which allows us different kinds of flexibility based on the data
+tibble(sim_norm) %>% 
+  ggplot(aes(sample = sim_norm)) + 
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  labs(title = "Quantile-Quantile plot for the sample data")
+```
+
+No, not all points fall exactly on the line, but they aren't terribly far off! To view the probability plot for the fdims (assuming the question is _just_ for female data, we run the same format code...
+```{r}
+#load the bdims data
+bdims %>% 
+  #filter for females
+  filter(sex == 0) %>% 
+  #build your ggplot interface
+  ggplot(aes(sample = hgt)) + 
+  #quantile-quantile layer
+  stat_qq() +
+  #slope and intercept layer
+  stat_qq_line(color = "red") +
+  labs(title = "Quantile-Quantile plot for original female data",
+       subtitle = "less linear than the sample data")
+```
+
+...and end up with a QQplot that, while still generally normal, shows definite variation differences than the sample data. The points end up on the line less - not *just* at the tails, but in the center areas as well.
+
+# Exercise 4
+
+## Does the normal probability plot for fdims$hgt look similar to the plots created for the simulated data? That is, do plots provide evidence that the female heights are nearly normal?
+
+
+
+# Exercise 5
+
+## Using the same technique, determine whether or not female weights appear to come from a normal distribution.
+
+
