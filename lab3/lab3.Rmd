@@ -146,13 +146,7 @@ fdims %>%
        subtitle = "less linear than the sample data")
 
 #density histogram 
-fdims %>% 
-  select(wgt) %>% 
-  ggplot(aes(x=wgt, y=..density..)) + 
-  geom_histogram(position="identity") + 
-  geom_density(alpha = 0.3, fill = "pink") +
-  labs(title = "Histogram of female weight") +
-  theme_light()
+
 ```
 
 The two plots above highlight female `weights` do *not* appear to come from a normal distrubution. The `QQPlot` shows a defined curvature, non-linear behavior, with each tail peaking upward while the center lies beneath the line. This implies something other than normal distribution. On either end there appear to be systematic outliers as well. The density histogram and line provide an appearance of poisson distribution.
@@ -173,7 +167,6 @@ iscamnormprob(180, mean = fhgtmean, sd = fhgtsd, direction = "above")
 sum(fdims$hgt > 180) / length(fdims$hgt)
 ```
 
-
 ###Question 2: What is the probability a female weight is less than 60?
 ####Theoretical normal
 ```{r}
@@ -186,3 +179,4 @@ iscamnormprob(60, mean = mean(fdims$wgt), sd = sd(fdims$wgt), direction = "below
 sum(fdims$wgt < 60) / length(fdims$wgt)
 ```
 
+The height data was more accurate with an absolute difference of `r abs((1 - pnorm(q = 180, mean = fhgtmean, sd = fhgtsd)) - (sum(fdims$hgt > 180) / length(fdims$hgt)))`; where as the weight data was further away at an absolute difference of `r abs((1 - pnorm(q = 60, mean = mean(fdims$wgt), sd = sd(fdims$wgt))) - (sum(fdims$wgt < 60) / length(fdims$wgt)))`.
