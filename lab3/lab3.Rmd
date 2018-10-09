@@ -8,6 +8,10 @@ output: word_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(OIdata)
+# note that you can load ISCAM.RData to get the "iscamnormprob" function
+  # per http://pages.pomona.edu/~jsh04747/courses/math58/lab3_m58b_s17_normal.html 
+load(url("http://www.rossmanchance.com/iscam3/ISCAM.RData"))
 ```
 
 ```{r data download, include=FALSE}
@@ -87,19 +91,17 @@ tibble(sim_norm) %>%
   labs(title = "Quantile-Quantile plot for the sample data")
 ```
 
-No, not all points fall exactly on the line, but they aren't terribly far off! To view the probability plot for the fdims (assuming the question is _just_ for female data, we run the same format code...
-```{r}
+No, not all points fall exactly on the line, but they aren't terribly far off! To view the probability plot for the original data, we run the same format code...
+```{r }
 #load the bdims data
 bdims %>% 
-  #filter for females
-  filter(sex == 0) %>% 
   #build your ggplot interface
   ggplot(aes(sample = hgt)) + 
   #quantile-quantile layer
   stat_qq() +
   #slope and intercept layer
   stat_qq_line(color = "red") +
-  labs(title = "Quantile-Quantile plot for original female data",
+  labs(title = "Quantile-Quantile plot for all original data",
        subtitle = "less linear than the sample data")
 ```
 
@@ -109,10 +111,78 @@ bdims %>%
 
 ## Does the normal probability plot for fdims$hgt look similar to the plots created for the simulated data? That is, do plots provide evidence that the female heights are nearly normal?
 
+```{r plot simulated data}
+#first we load the simulated data plots
+#qqnormsim is a custom function from OpenIntro
+qqnormsim(fdims$hgt)
+```
+```{r plot fdims data}
+fdims %>% 
+  #build your ggplot interface
+  ggplot(aes(sample = hgt)) + 
+  #quantile-quantile layer
+  stat_qq() +
+  #slope and intercept layer
+  stat_qq_line(color = "red") +
+  labs(title = "Quantile-Quantile plot for FEMALE height",
+       subtitle = "less linear than the sample data")
+```
 
+Yes, the normal probability plot for `fdims$hgt` looks similar to the plots created for the simulated data. They are both approximately linear with some variation at the tails. The plot for `fdims$hgt` supports that the female height distributino is approximately normal. 
 
 # Exercise 5
 
 ## Using the same technique, determine whether or not female weights appear to come from a normal distribution.
+```{r plotting female weight}
+#qqplot 
+fdims %>% 
+  #build your ggplot interface
+  ggplot(aes(sample = wgt)) + 
+  #quantile-quantile layer
+  stat_qq() +
+  #slope and intercept layer
+  stat_qq_line(color = "red") +
+  labs(title = "Quantile-Quantile plot for FEMALE weight",
+       subtitle = "less linear than the sample data")
 
+#density histogram 
+fdims %>% 
+  select(wgt) %>% 
+  ggplot(aes(x=wgt, y=..density..)) + 
+  geom_histogram(position="identity") + 
+  geom_density(alpha = 0.3, fill = "pink") +
+  labs(title = "Histogram of female weight") +
+  theme_light()
+```
+
+The two plots above highlight female `weights` do *not* appear to come from a normal distrubution. The `QQPlot` shows a defined curvature, non-linear behavior, with each tail peaking upward while the center lies beneath the line. This implies something other than normal distribution. On either end there appear to be systematic outliers as well. The density histogram and line provide an appearance of poisson distribution.
+
+#Exercise 6
+
+##Write out two probability questions that you would like to answer; one regarding female heights and one regarding female weights. Calculate the those probabilities using both the theoretical normal distribution as well as the empirical distribution (four probabilities in all). Which variable, height or weight, had a closer agreement between the two methods?
+
+###Question 1: What is the probability a female height is greater than 180?
+####Theoretical normal
+```{r calculate the theoretical normal}
+1 - pnorm(q = 180, mean = fhgtmean, sd = fhgtsd)
+iscamnormprob(180, mean = fhgtmean, sd = fhgtsd, direction = "above")
+```
+
+####Empirical normal
+```{r using iscamnormprob function to plot probability}
+sum(fdims$hgt > 180) / length(fdims$hgt)
+```
+
+
+###Question 2: What is the probability a female weight is less than 60?
+####Theoretical normal
+```{r}
+1 - pnorm(q = 60, mean = mean(fdims$wgt), sd = sd(fdims$wgt))
+iscamnormprob(60, mean = mean(fdims$wgt), sd = sd(fdims$wgt), direction = "below")
+```
+
+####Empirical normal
+```{r}
+sum(fdims$wgt < 60) / length(fdims$wgt)
+```
 
