@@ -1,0 +1,80 @@
+---
+title: "da460_assignment3_grahn"
+author: "jason grahn"
+date: "10/11/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+download.file("http://www.openintro.org/stat/data/bdims.RData", destfile = "bdims.RData")
+load("bdims.RData")
+
+#filter the bdims data for sex == 0 because those are females
+#fdims <- subset(bdims, sex == 0)
+fdims <- bdims %>% 
+  filter(sex == 0)
+```
+
+
+```{r facetting the QQplots}
+fdims %>% 
+  select(bii.di, elb.di, age, che.de) %>% 
+  gather(key = "variable", value = "values", bii.di, elb.di, age, che.de) %>% 
+  ggplot(aes(sample = values)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  facet_wrap(vars(variable), nrow = 2, ncol = 2)
+```
+
+#R component
+
+Now let’s consider some of the other variables in the body dimensions data set. 
+
+##1. Match the histogram to its normal probability plot. All of the variables have been standardized (first subtract the mean, then divide by the standard deviation), so the units won’t be of any help. If you are uncertain based on these figures, generate the plots in R to check. 
+
+```{r qq for bii di}
+qqnorm(fdims$bii.di)
+qqline(fdims$bii.di)
+```
+a. The histogram for female biiliac (pelvic) diameter (bii.di) belongs to normal probability plot letter _B_.
+
+```{r qq for elb di}
+qqnorm(fdims$elb.di)
+qqline(fdims$elb.di)
+```
+b. The histogram for female elbow diameter (elb.di) belongs to normal probability plot letter _C_. 
+
+```{r qq for age}
+qqnorm(fdims$age)
+qqline(fdims$age)
+```
+c. The histogram for general age (age) belongs to normal probability plot letter _D_. 
+
+```{r qq for che de}
+qqnorm(fdims$che.de)
+qqline(fdims$che.de)
+```
+d. The histogram for female chest depth (che.de) belongs to normal probability plot letter _A_.
+
+##2. Note that normal probability plots C and D have a slight stepwise pattern. Why do you think this is the case?
+Stepwise patterns in a QQ plot are side-effects of discrete variables or the observations have been rounded.
+
+##3. As you can see, normal probability plots can be used both to assess normality and visualize skewness. Make a normal probability plot for female knee diameter (kne.di). Based on this normal probability plot, is this variable left skewed, symmetric, or right skewed? Use a histogram to confirm your findings.
+
+```{r qq for kne di}
+qqnorm(fdims$kne.di)
+qqline(fdims$kne.di)
+```
+
+The data seems to be right skewed.
+
+```{r}
+fdims %>% 
+  ggplot(aes(x = kne.di)) +
+  geom_histogram(bins = 15)
+```
+
+The histogram confirms it. 
