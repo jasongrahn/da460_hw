@@ -7,24 +7,110 @@ output: word_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r load lab data, include=FALSE}
+download.file("http://www.openintro.org/stat/data/ames.RData", destfile = "ames.RData")
+load("ames.RData")
 ```
 
-## Including Plots
+```{r}
+#base R
+area <- ames$Gr.Liv.Area
+price <- ames$SalePrice
+  
+summary(area)
+hist(area)
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+#tidy-style
+ames %>% 
+  select(area = Gr.Liv.Area, 
+         price = SalePrice) %>% 
+  gather(key = 'variable', value = 'values', area, price) %>% 
+  filter(variable == "area") %>% 
+  ggplot() +
+    geom_histogram(aes(x = values), 
+                   bins = 13,
+                   color = "black") 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+#Exercise1
+##Describe this population distribution.
+
+The distribution appears unimodal with a long right skew. The median and mean quite close at 1442 and 1500, respectively, which indicates some degree of normalicy. 
+
+#Excercise2
+##Describe the distribution of this sample. How does it compare to the distribution of the population?
+
+```{r}
+samp1 <- sample(area, 50)
+
+summary(samp1)
+hist(samp1)
+```
+
+The Mean and Median of the sameple is similar, albeit different than the population. The histogram shows similar tendencies, unimodal with right skew.
+
+#Exercise3
+##Take a second sample, also of size 50, and call it samp2. How does the mean of samp2 compare with the mean of  samp1? Suppose we took two more samples, one of size 100 and one of size 1000. Which would you think would provide a more accurate estimate of the population mean?
+
+```{r}
+samp2 <- sample(area, 50)
+
+summary(samp2)
+hist(samp2)
+```
+
+The mean of this sample is still similar to sample 1, though a bit higher. If we took larger samples of 100 and 1000, I would expect the sample means to be much closer to the population mean.
+
+#Exercise4
+##How many elements are there in sample_means50? Describe the sampling distribution, and be sure to specifically note its center. Would you expect the distribution to change if we instead collected 50,000 sample means?
+
+```{r}
+sample_means50 <- rep(NA, 5000)
+
+for(i in 1:5000){
+   samp <- sample(area, 50)
+   sample_means50[i] <- mean(samp)
+   }
+
+summary(sample_means50)
+hist(sample_means50)
+
+#If you would like to adjust the bin width of your histogram to show a little more detail, you can do so by changing the breaks argument.
+
+hist(sample_means50, breaks = 25)
+```
+
+`Sample_means50` has 5000 elements. The sampling distribution appears quite normal with a mean of 1499 and median 1497. Given we're so incredibly far past the point of central limit theory, I would _not_ expect the distribution to change if we collected 50,000 instead. It might be a little taller in the center, but otherwise unchanged.
+
+#Example5
+##To make sure you understand what you’ve done in this loop, try running a smaller version. Initialize a vector of 100 zeros called sample_means_small. Run a loop that takes a sample of size 50 from area and stores the sample mean in sample_means_small, but only iterate from 1 to 100. Print the output to your screen (type  sample_means_small into the console and press enter). How many elements are there in this object called  sample_means_small? What does each element represent?
+
+```{r}
+sample_means_small <- rep(NA, 100)
+
+for(i in 1:100){
+   samp <- sample(area, 50)
+   sample_means_small[i] <- mean(samp)
+   }
+
+summary(sample_means_small)
+hist(sample_means_small)
+
+#If you would like to adjust the bin width of your histogram to show a little more detail, you can do so by changing the breaks argument.
+
+hist(sample_means_small, breaks = 25)
+```
+
+```{r}
+print(sample_means_small)
+```
+
+There are 100 elements in the vector `sample_means_small` and each element represents the mean of the size-50 sample that was taken in the `for` loop.
+
+#Exercise6
+##When the sample size is larger, what happens to the center? What about the spread?
+
+
