@@ -8,5 +8,101 @@ output: word_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(moderndive)
+
+download.file("http://www.openintro.org/stat/data/ames.RData", destfile = "ames.RData")
+load("ames.RData")
 ```
+
+# *R* 
+
+## Question 1: 
+###Take a random sample of size 50 from price. Using this sample, what is your best point estimate of the population mean?
+
+```{r}
+price <- ames %>% 
+  select(SalePrice) 
+
+small_sample <- price %>% 
+  rep_sample_n(size = 50, reps = 1) %>% 
+  group_by(replicate) %>% 
+  #give me an average per replicate
+  summarise(sample_mean = mean(SalePrice))
+```
+
+At the time of this writing, the point estimate of sample_mean is `r round(small_sample, digits = 2)`. 
+
+## Question 2: 
+###Since you have access to the population, simulate the sampling distribution for price by taking 2000 samples from the population of size 50 and computing 2000 sample means. Store these means in a vector called `sample_means50`. 
+```{r}
+sample_means50 <- price %>% 
+  rep_sample_n(size = 50, reps = 2000) %>% 
+  group_by(replicate) %>% 
+  summarise(sample_mean = mean(SalePrice)) 
+```
+
+###Plot the data, then describe the shape of this sampling distribution. Based on this sampling distribution, what would you guess the mean home price of the population to be?
+```{r}
+sample_means50 %>% 
+  ggplot() +
+  geom_histogram(aes(x = sample_mean), color = "grey") +
+  theme_light()
+
+mean_of_sample_means50 <- sample_means50 %>% 
+  ungroup() %>% 
+  mutate(spread = max(sample_mean) - min(sample_mean)) %>% 
+  summarise(mean = mean(sample_mean),
+            median = median(sample_mean),
+            sd = sd(sample_mean),
+            spread = mean(spread))
+```
+
+The shape of the sample distribution appears highly normal, though it appears to have a bit of a right skew. The median is `r round(mean_of_sample_means50$median, digits = 2)` with a standard deviation of `r round(mean_of_sample_means50$sd, digits = 2)` This larger sampling provides a point estimate of `r round(mean_of_sample_means50, digits = 2)`. 
+
+###Finally, calculate and report the population mean.
+```{r}
+price %>% 
+  summarise(mean = mean(SalePrice))
+```
+
+## Question 3: 
+### Change your sample size from 50 to 150, then compute the sampling distribution using the same method as above, and store these means in a new vector called `sample_means150`. Describe the shape of this sampling distribution, and compare it to the sampling distribution for a sample size of 50. Based on this sampling distribution, what would you guess to be the mean sale price of homes in Ames?
+
+```{r}
+sample_means150 <- price %>% 
+  rep_sample_n(size = 150, reps = 2000) %>% 
+  group_by(replicate) %>% 
+  summarise(sample_mean = mean(SalePrice)) 
+```
+
+```{r}
+sample_means150 %>% 
+  ggplot() +
+  geom_histogram(aes(x = sample_mean), color = "grey") +
+  theme_light()
+
+mean_of_sample_means150 <- sample_means150 %>% 
+  ungroup() %>% 
+  mutate(spread = max(sample_mean) - min(sample_mean)) %>% 
+  summarise(mean = mean(sample_mean),
+            median = median(sample_mean),
+            sd = sd(sample_mean),
+            spread = mean(spread))
+```
+The mean of the larger sample size `mean_of_sample_means150` is less than the mean of `mean_of_sample_means50` by `r mean_of_sample_means150$mean - mean_of_sample_means50$mean`. The median of `mean_of_sample_means150` is about 200 higher. 
+
+The shape of the sample distribution appears highly normal, though it appears to have a bit of a right skew. The median is `r mean_of_sample_means150$median` with a standard deviation of `r mean_of_sample_means150$sd` This larger sampling provides a point estimate of `r mean_of_sample_means150`. 
+
+##Question 4:
+###Of the sampling distributions from 2 and 3, which has a smaller spread? If we’re concerned with making estimates that are more often close to the true value, would we prefer a sampling distribution with a large or small spread?
+
+```{r}
+#The spread of mean_of_sample_means150 is
+mean_of_sample_means150$spread
+
+#The spread of mean_of_sample_means50 is
+mean_of_sample_means50$spread
+```
+
+The spread of the sampling distribution from 3 is smaller. 
 
