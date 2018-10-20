@@ -1,0 +1,12 @@
+---
+title: "hw4"
+author: "jason grahn"
+date: "10/19/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
