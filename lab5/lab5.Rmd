@@ -27,6 +27,8 @@ population.tidy <- ames %>%
 
 samp.tidy <- population.tidy %>% 
   rep_sample_n(size = 60, reps = 1)
+
+summary(samp.tidy)
 ```
 
 ##Exercise 1
@@ -42,6 +44,13 @@ samp.qqplot <- samp.tidy %>%
   ggplot(aes(sample = Gr.Liv.Area)) + 
   stat_qq() +
   stat_qq_line(color = "red")
+
+Mode <- function(x) {
+     ux <- unique(x)
+     ux[which.max(tabulate(match(x, ux)))]
+     }
+
+Mode( samp.tidy$Gr.Liv.Area)
 
 samp.describe
 samp.histogram
