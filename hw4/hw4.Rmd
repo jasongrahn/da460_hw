@@ -88,10 +88,12 @@ mean_of_sample_means150 <- sample_means150 %>%
             median = median(sample_mean),
             sd = sd(sample_mean),
             spread = mean(spread))
+
+mean_of_sample_means150$mean
 ```
 The mean of the larger sample size `mean_of_sample_means150` is less than the mean of `mean_of_sample_means50` by `r mean_of_sample_means150$mean - mean_of_sample_means50$mean`. The median of `mean_of_sample_means150` is about 200 higher. 
 
-The shape of the sample distribution appears highly normal, though it appears to have a bit of a right skew. The median is `r mean_of_sample_means150$median` with a standard deviation of `r mean_of_sample_means150$sd` This larger sampling provides a point estimate of `r mean_of_sample_means150`. 
+The shape of the sample distribution appears highly normal, though it appears to have a bit of a right skew. The median is `r mean_of_sample_means150$median` with a standard deviation of `r mean_of_sample_means150$sd` This larger sampling provides a point estimate of `r mean_of_sample_means150$mean`. 
 
 ##Question 4:
 ###Of the sampling distributions from 2 and 3, which has a smaller spread? If we’re concerned with making estimates that are more often close to the true value, would we prefer a sampling distribution with a large or small spread?

@@ -1,0 +1,71 @@
+---
+title: "lab5"
+author: "jason grahn"
+date: "10/24/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(moderndive)
+library(psych)
+
+download.file("http://www.openintro.org/stat/data/ames.RData", destfile = "ames.RData")
+load("ames.RData")
+
+```
+
+#R component
+
+```{r}
+population <- ames$Gr.Liv.Area
+samp <- sample(population, 60)
+
+population.tidy <- ames %>% 
+  select(Gr.Liv.Area)
+
+samp.tidy <- population.tidy %>% 
+  rep_sample_n(size = 60, reps = 1)
+```
+
+##Exercise 1
+###Describe the distribution of your sample. What would you say is the “typical” size within your sample? Also state precisely what you interpreted “typical” to mean.
+```{r}
+samp.describe <- describe(samp.tidy$Gr.Liv.Area)
+
+samp.histogram <- samp.tidy %>% 
+  ggplot() +
+  geom_histogram(aes(x = Gr.Liv.Area), bins = 15)
+
+samp.qqplot <- samp.tidy %>% 
+  ggplot(aes(sample = Gr.Liv.Area)) + 
+  stat_qq() +
+  stat_qq_line(color = "red")
+
+samp.describe
+samp.histogram
+samp.qqplot
+```
+
+The sample appears somewhat normal but with a very strong right skew as we can tell with a skewness of `1.02`. The `median` is 1498 with a `mean` of 1574. 
+
+##Exercise 2
+###Would you expect another student’s distribution to be identical to yours? Would you expect it to be similar? Why or why not?
+
+I definitely would _NOT_ expect another students distribution to be identical because we pulled the descriptive statistics from a sample of 60 out of a population of 2,930. If the population is truly normal, then their sample would ideed be similar. 
+
+##Exercise 3
+###For the confidence interval to be valid, the sample mean must be normally distributed and have standard error s/n‾√. What conditions must be met for this to be true?
+
+For the confidence interval of a sample to be true, the sample must be random and independent. The sample size needs to be greater than 30, and there should be no skewness to the distribution.
+
+##Exercise 4
+###What does “95% confidence” mean? If you’re not sure, see Section 4.2.2.
+
+The term "95% confidence" means that 95% of the time our point estimates will be within 2 standard errors of the parameter for that statistic.
+
+##Exercise 5
+###Does your confidence interval capture the true average size of houses in Ames? If you are working on this lab in a classroom, does your neighbor’s interval capture this value?
+
+
