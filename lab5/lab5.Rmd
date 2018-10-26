@@ -96,3 +96,59 @@ The population mean is `r pop.mean`. The confidence interval of my sample captur
 
 We aren't in a classroom. I would expect 95% of the intervals to capture the true population mean because that's how confidence intervals work. 
 
+update:
+
+ok so i want to figure out how I can do this for the entire class
+
+```{r}
+#load packages
+library(tidyverse)
+library(broom)
+library(psych)
+
+#download and load file
+download.file("http://www.openintro.org/stat/data/ames.RData", destfile = "ames.RData")
+load("ames.RData")
+
+#get the population into a tidy data frame
+population.tidy <- ames %>% 
+  select(Gr.Liv.Area)
+
+#what's the population mean?
+population.mean <- mean(population.tidy$Gr.Liv.Area)
+
+#run the sampling of 60 for 60 students
+class.samp.tidy <- population.tidy %>% 
+  rep_sample_n(size = 60, reps = 60)
+
+#whats the mean for all the samples taken by the simulated 60 students?
+class.mean <- class.samp.tidy %>% 
+  #group by the replicate column
+  group_by(replicate) %>% 
+  #give me an average per replicate
+  summarise(sample_mean = mean(Gr.Liv.Area)) %>% 
+  ungroup() %>% 
+  #give me the average for all averages
+  summarise(sample_mean = mean(sample_mean))
+
+#ok, lets make a pretty picture with all of this...
+class.samp.tidy %>% 
+  group_by(replicate) %>% 
+  #build our confidence intervals
+  summarise(sample_mean = mean(Gr.Liv.Area),
+            standard_dev = SD(Gr.Liv.Area),
+            se = standard_dev/sqrt(60),
+            lower = sample_mean - 1.96 * se,
+            upper = sample_mean + 1.96 * se) %>% 
+  #and now for the pretty picture
+  ggplot() +
+  theme_minimal() +
+  geom_pointrange(aes(x = factor(replicate), y = sample_mean, ymin = lower, ymax = upper), alpha = 0.5) + 
+  geom_hline(yintercept = population.mean, color = "red") +
+  geom_hline(yintercept = class.mean$sample_mean, color = "blue") +
+  coord_flip() +
+  labs(title = "Confidence intervals for 60 simulated students",
+       subtitle = "Red line is population mean, blue line is mean of sample means")
+```
+
+nice.
