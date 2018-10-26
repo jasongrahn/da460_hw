@@ -1,0 +1,20 @@
+---
+title: "midterm"
+author: "jason grahn"
+date: "10/26/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(moderndive)
+```
+
+
+```{r loading smoking data}
+library(readr)
+smoking <- read_csv("midterm/smoking.csv")
+View(smoking)
+```
+
