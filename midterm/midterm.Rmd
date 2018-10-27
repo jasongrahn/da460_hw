@@ -9,12 +9,121 @@ output: word_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(moderndive)
+library(psych)
 ```
 
+#Problem 1:
+##N. 1 
+Download smoking.csv (or smoking.txt) and read corresponding data into R. Example command in R: `MyData <- read.csv(file="path/TheDataIWantToReadIn.csv",header=TRUE, sep=",")`Make sure to include the code/command.
 
 ```{r loading smoking data}
 library(readr)
-smoking <- read_csv("midterm/smoking.csv")
-View(smoking)
+smoking <- read_csv("smoking.csv")
+#View(smoking)
 ```
 
+##N. 2 
+How many observations are there in this data set? 
+How many variables, and what are they? 
+
+```{r}
+#how many observations and variables are shown with glimpse()
+glimpse(smoking)
+```
+
+The `glimpse()` function shows us both the number of variables and rows. The number of rows in the data is `r nrow(smoking)`, and the number of variables is 12. They are:
+    
+    * gender
+    * age
+    * maritalStatus
+    * highestQualification
+    * nationality
+    * ethnicity
+    * grossIncome
+    * region
+    * smoke
+    * amtWeekends
+    * amtWeekdays
+    * type
+
+```{r}
+#What is the 300th observation of nationality?
+smoking$nationality[[300]]
+```
+
+##N. 3 
+Create a numerical summary for age and compute the interquartile range. 
+```{r}
+summary(smoking$age)
+
+age.iqr <- describe(smoking$age, IQR = TRUE) %>% 
+  select(IQR)
+```
+
+The numerical summary for `age` is shown above. The IQR is `r age.iqr$IQR`.
+
+Compute the relative frequency distribution for gender. 
+```{r}
+table(smoking$gender)/nrow(smoking)
+```
+
+How many males are in the sample? Include both the code/command and the output/graph.
+```{r}
+male.count <- nrow(
+  smoking %>% 
+    filter(gender == "Male")
+)
+```
+
+There are `r male.count` males in the sample. 
+
+##N. 4
+Using numerical summaries and a side-by-side box plot, determine if male smokers are as old as female smokers. Include both the code/command and the output/graph.
+
+```{r setup smoking filtered data}
+s.g <- smoking %>% 
+  filter(smoke == "Yes") %>% 
+  select(age, gender)
+
+#group the male data together
+s.g.m <- s.g %>% filter(gender == "Male")
+
+#group the female data together
+s.g.f <- s.g %>% filter(gender == "Female")
+```
+
+```{r summary of make smoker ages}
+#age summary for male smokers
+summary(s.g.m$age)
+```
+
+```{r summary of female smoker ages}
+#age summary for female smokers
+summary(s.g.f$age)
+```
+
+```{r side by side boxplot of smoker ages}
+s.g %>% 
+  ggplot(aes(x = gender, y = age)) + 
+  geom_boxplot() +
+  geom_jitter(alpha = 0.1, width = 0.05)
+```
+
+##N. 5
+Create a bar chart or frequency table for maritalStatus, what is the proportion for Divorced, Single, Married, and Widowed, respectively? What can you interpret from these numbers? Include both the code/command and the output/graph.
+
+```{r status frequency table}
+table(smoking$maritalStatus)/nrow(smoking) 
+```
+
+We can interpret from these numbers that most people in the smokers data frame are married. Single is next, then widowed. 
+
+#Problem 2
+
+#N. 1
+Suppose we’re flipping an unfair coin that we know only lands heads 30% of the time. Please simulate this flip 10 times, what is the proportion of heads? 
+```{r}
+
+```
+
+If you simulate this flip 100 times, what is the proportion of heads now? Include both the code/command and the output/graph.
