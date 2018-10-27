@@ -13,7 +13,7 @@ library(psych)
 ```
 
 #Problem 1:
-##N. 1 
+##N. 1-1 
 Download smoking.csv (or smoking.txt) and read corresponding data into R. Example command in R: `MyData <- read.csv(file="path/TheDataIWantToReadIn.csv",header=TRUE, sep=",")`Make sure to include the code/command.
 
 ```{r loading smoking data}
@@ -22,7 +22,7 @@ smoking <- read_csv("smoking.csv")
 #View(smoking)
 ```
 
-##N. 2 
+##N. 1-2 
 How many observations are there in this data set? 
 How many variables, and what are they? 
 
@@ -51,7 +51,7 @@ The `glimpse()` function shows us both the number of variables and rows. The num
 smoking$nationality[[300]]
 ```
 
-##N. 3 
+##N. 1-3 
 Create a numerical summary for age and compute the interquartile range. 
 ```{r}
 summary(smoking$age)
@@ -77,7 +77,7 @@ male.count <- nrow(
 
 There are `r male.count` males in the sample. 
 
-##N. 4
+##N. 1-4
 Using numerical summaries and a side-by-side box plot, determine if male smokers are as old as female smokers. Include both the code/command and the output/graph.
 
 ```{r setup smoking filtered data}
@@ -106,10 +106,11 @@ summary(s.g.f$age)
 s.g %>% 
   ggplot(aes(x = gender, y = age)) + 
   geom_boxplot() +
-  geom_jitter(alpha = 0.1, width = 0.05)
+  geom_jitter(alpha = 0.1, width = 0.05) +
+  theme_minimal()
 ```
 
-##N. 5
+##N. 1-5
 Create a bar chart or frequency table for maritalStatus, what is the proportion for Divorced, Single, Married, and Widowed, respectively? What can you interpret from these numbers? Include both the code/command and the output/graph.
 
 ```{r status frequency table}
@@ -119,8 +120,7 @@ table(smoking$maritalStatus)/nrow(smoking)
 We can interpret from these numbers that most people in the smokers data frame are married. Single is next, then widowed. 
 
 #Problem 2
-
-#N. 1
+#N. 2-1
 Suppose we’re flipping an unfair coin that we know only lands heads 30% of the time. Please simulate this flip 10 times, what is the proportion of heads? 
 ```{r}
 outcomes.coin <- c("heads", "tails")
@@ -157,7 +157,7 @@ prop.heads.large <- unfair.tidy.large %>%
 
 The proportion of heads is `r prop.heads.large`.
 
-##N.2
+##N.2-2
 Suppose we’re flipping an unfair dice and the corresponding probability of landing 1, 2,
 3, 4, 5, and 6 is 0.05, 0.1, 0.15, 0.2, 0.3, and 0.2, respectively. If you simulate this flip 10
 times, what is the proportion of land on side 5? 
@@ -183,7 +183,7 @@ Simulate this flip 100 times, what is the proportion of side 5 now? Include both
 
 ```{r}
 #build a dataset of an UNFAIR coin toss
-sim.unfair.dice.large <- sample(outcomes.dice, size = 10, replace = TRUE, prob = c(0.05, 0.1, 0.15, 0.2, 0.3,  0.2))
+sim.unfair.dice.large <- sample(outcomes.dice, size = 100, replace = TRUE, prob = c(0.05, 0.1, 0.15, 0.2, 0.3, 0.2))
 
 unfair.dice.tidy.large <- tibble(sim.unfair.dice.large)
 
@@ -197,6 +197,103 @@ prop.5.large <- unfair.dice.tidy.large %>%
 
 The proportion of landing on side `5` is `r prop.5.large`.
 
-##N. 3
+##N. 2-3
 Compare the proportions in each questions above, what conclusion can you draw? Does the number of simulations affect the proportions? If so, how? Please explain in details. 
 
+Running the simulation only 10 times, we have a situation where we might not land on a give value _at all_. However, with running more simulations, we get ever closer to the probabilities provided for the cheater dice. Even with a cheater dice, this is due to central limit theorem. With the cheater dice, we've set the conditions, from there, the dice rolls are independent in that rolling once has no conditional bearing on what happens afterward, AND we have a sufficiently high number of dice rolls... though there is at least some diminished independece as we HAVE set the conditional parameters. 
+
+#Problem 3:
+##N. 3-1
+
+Download countyComplete.csv (or countyComplete.txt) and read corresponding data into R. Example command in R: `MyData <- read.csv(file="path/TheDataIWantToReadIn.csv", header=TRUE, sep=",")`. Include the
+code/command.
+
+```{r importing}
+countyComplete <- read_csv("countyComplete.csv")
+#glimpse(countyComplete)
+```
+
+##N. 3-2
+Make a histogram of pop2010, how can you descript its distribution, bellshaped or normal? Is it right skewed or left sewed? Include both the code/command and the output/graph.
+```{r}
+countyComplete %>% 
+  select(pop2000, pop2010) %>% 
+  psych::describe() %>% 
+  select(skew) 
+
+countyComplete %>% 
+  select(pop2010) %>% 
+  ggplot() +
+  geom_histogram(aes(x = pop2010), bins = 100) + 
+  theme_minimal()
+```
+
+The distribution of `pop2010` definitely has a strong right skew. Based on this, I would NOT treat the population data as "normal". When we evaluate the `skew` of pop2010, we also see it has a value of 14.34 (down from the skewness of pop2000). This is a clear indicator toward the right skewness of the data. 
+
+##N. 3-3
+Create a new subset named Washington which contains only the observations of Washington, and then make a histogram of pop2010, how can you describe its distribution, bell-shaped or normal? Is it right skewed or left sewed? Compare this with question 1. Include both the code/command and the output/graph. 
+```{r}
+wa.subset <- countyComplete %>% 
+  filter(state == "Washington")
+
+wa.subset %>% 
+  select(pop2000, pop2010) %>% 
+  psych::describe() %>% 
+  select(skew) 
+
+wa.subset %>% 
+  ggplot() +
+  geom_histogram(aes(x = pop2010), bins = 100) + 
+  theme_minimal()
+```
+
+The 2010 data from `Washington` is much less skewed than the entire `countyComplete` data, with a skewness of 3.71. We still see a right tail, but it is much less pronounced.
+
+##N. 3-4
+Based on the subset Washington, make a normal probability plot of pop2010. 
+```{r qqplot for washington subset data}
+wa.subset %>% 
+  ggplot(aes(sample = pop2010)) + 
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  labs(title = "Quantile-Quantile plot for the Washington sample data")
+```
+
+Do all of the points fall on the line? 
+
+Most defininitely do many points _not_ fall on the line. 
+
+How does this plot compare to the probability plot of the original data? Include both the code/command and the output/graph.
+```{r qqplot for entirety of dataset}
+countyComplete %>% 
+  #filter(state != "Washington") %>% 
+  ggplot(aes(sample = pop2010)) +
+  stat_qq() +
+  #scale_y_log10() + if I were going to model this, it'd have to be in log scale. 
+  stat_qq_line(color = "red") +
+  labs(title = "Quantile-Quantile plot for the sample data")
+```
+
+When we evaluate the qqplot for Washington against the entire population, the charts show similar behaviors. Each provides indications of long right tails with their rapid appearance of growth on the far right. The numbers are too large to see, but I'm willing to bet the left side of the entire population is slightly curved upward, similar to Washington. 
+
+##N. 3-5
+Suppose the variable pop2010 has a normal distribution, what is the probability that pop2010 is greater than 102,410? 
+```{r}
+county.pop <- countyComplete$pop2010
+
+pnorm(q = 102410, mean = mean(county.pop), sd = sd(county.pop))
+```
+Assuming normalicy, the probability `pop2010` is greater than 102,410 is `r pnorm(q = 102410, mean = mean(county.pop), sd = sd(county.pop))`. 
+
+What is the probability that pop2010 is between 190,000 and 1,000,000? Include both the code/command and the output/graph.
+```{r}
+(oneninety.thou <- 1- pnorm(q = 190000, mean = mean(county.pop), sd = sd(county.pop)))
+
+(one.mil <- pnorm(q = 1000000, mean = mean(county.pop), sd = sd(county.pop)))
+
+one.mil - oneninety.thou
+```
+
+The probability that pop2010 is between 190,000 and 1,000,000 is `r one.mil - oneninety.thou`. 
+
+#Problem 4
