@@ -123,7 +123,80 @@ We can interpret from these numbers that most people in the smokers data frame a
 #N. 1
 Suppose we’re flipping an unfair coin that we know only lands heads 30% of the time. Please simulate this flip 10 times, what is the proportion of heads? 
 ```{r}
+outcomes.coin <- c("heads", "tails")
 
+#build a dataset of an UNFAIR coin toss
+sim_unfair_coin <- sample(outcomes.coin, size = 10, replace = TRUE, prob = c(0.3, 0.7))
+
+unfair.tidy <- tibble(sim_unfair_coin)
+
+prop.heads <- unfair.tidy %>% 
+  group_by(sim_unfair_coin) %>% 
+  summarise(coin_count = n()) %>%
+  mutate(freq = coin_count / nrow(unfair.tidy)) %>% 
+  filter(sim_unfair_coin == "heads") %>% 
+  select(freq)
 ```
 
+The proportion of heads is `r prop.heads`.
+
 If you simulate this flip 100 times, what is the proportion of heads now? Include both the code/command and the output/graph.
+
+```{r}
+sim_unfair_coin.large <- sample(outcomes.coin, size = 100, replace = TRUE, prob = c(0.3, 0.7))
+
+unfair.tidy.large <- tibble(sim_unfair_coin)
+
+prop.heads.large <- unfair.tidy.large %>% 
+  group_by(sim_unfair_coin) %>% 
+  summarise(coin_count = n()) %>%
+  mutate(freq = coin_count / nrow(unfair.tidy)) %>% 
+  filter(sim_unfair_coin == "heads") %>% 
+  select(freq)
+```
+
+The proportion of heads is `r prop.heads.large`.
+
+##N.2
+Suppose we’re flipping an unfair dice and the corresponding probability of landing 1, 2,
+3, 4, 5, and 6 is 0.05, 0.1, 0.15, 0.2, 0.3, and 0.2, respectively. If you simulate this flip 10
+times, what is the proportion of land on side 5? 
+```{r}
+outcomes.dice <- c(1, 2, 3, 4, 5, 6)
+
+#build a dataset of an UNFAIR coin toss
+sim.unfair.dice <- sample(outcomes.dice, size = 10, replace = TRUE, prob = c(0.05, 0.1, 0.15, 0.2, 0.3,  0.2))
+
+unfair.dice.tidy <- tibble(sim.unfair.dice)
+
+prop.5 <- unfair.dice.tidy %>% 
+  group_by(sim.unfair.dice) %>% 
+  summarise(dice.count = n()) %>%
+  mutate(freq = dice.count / nrow(unfair.dice.tidy)) %>% 
+  filter(sim.unfair.dice == 5) %>% 
+  select(freq)
+```
+
+The proportion of landing on side `5` is `r prop.5`.
+
+Simulate this flip 100 times, what is the proportion of side 5 now? Include both the code/command and the output/graph.
+
+```{r}
+#build a dataset of an UNFAIR coin toss
+sim.unfair.dice.large <- sample(outcomes.dice, size = 10, replace = TRUE, prob = c(0.05, 0.1, 0.15, 0.2, 0.3,  0.2))
+
+unfair.dice.tidy.large <- tibble(sim.unfair.dice.large)
+
+prop.5.large <- unfair.dice.tidy.large %>% 
+  group_by(sim.unfair.dice.large) %>% 
+  summarise(dice.count = n()) %>%
+  mutate(freq = dice.count / nrow(unfair.dice.tidy.large)) %>% 
+  filter(sim.unfair.dice.large == 5) %>% 
+  select(freq)
+```
+
+The proportion of landing on side `5` is `r prop.5.large`.
+
+##N. 3
+Compare the proportions in each questions above, what conclusion can you draw? Does the number of simulations affect the proportions? If so, how? Please explain in details. 
+
