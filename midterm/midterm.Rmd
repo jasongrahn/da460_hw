@@ -287,7 +287,7 @@ Assuming normalicy, the probability `pop2010` is greater than 102,410 is `r pnor
 
 What is the probability that pop2010 is between 190,000 and 1,000,000? Include both the code/command and the output/graph.
 ```{r}
-(oneninety.thou <- 1- pnorm(q = 190000, mean = mean(county.pop), sd = sd(county.pop)))
+(oneninety.thou <- pnorm(q = 190000, mean = mean(county.pop), sd = sd(county.pop)))
 
 (one.mil <- pnorm(q = 1000000, mean = mean(county.pop), sd = sd(county.pop)))
 
@@ -297,3 +297,70 @@ one.mil - oneninety.thou
 The probability that pop2010 is between 190,000 and 1,000,000 is `r one.mil - oneninety.thou`. 
 
 #Problem 4
+##N. 4-1
+Collect a simple random sample of size 50 from pop2010 in data set countyComplete.csv (or countyComplete.txt). Describe the distribution of this sample. How does it compare to the distribution of the population? Using this sample, what is your best point estimate of the population mean? Include both the code/command and the output/graph.
+```{r}
+sample.county <- countyComplete %>% 
+  select(pop2010) %>% 
+  rep_sample_n(size = 50, reps = 1) 
+
+sample.county.histogram <- sample.county %>% 
+  ggplot() +
+  geom_histogram(aes(pop2010)) +
+  labs(title = "histogram for sample size 50")
+
+sample.stats <- sample.county %>% 
+  describe()
+
+sample.county.histogram
+
+sample.stats
+
+population.stats <- countyComplete %>% 
+  select(state, pop2010) %>% 
+  describe()
+
+population.histogram <- countyComplete %>% 
+  ggplot() + 
+  geom_histogram(aes(x = pop2010))
+
+population.histogram
+population.stats
+```
+
+The distribution of the sample has a mean of `125,291` with a median `22,695` so already we can tell this is a right skewed sample. When we look at the variable `skew`, we see it has a value `6.04` which reinforces the right bias of the variable. The spread is over 1 million. The sample would indicate the population mean is `108741`.
+
+##N. 4-2
+Now, collect a simple random sample of size 300 from pop2010 in data set countyComplete.csv (or countyComplete.txt). Describe the distribution of this sample. How does it compare to the distribution of the population? Using this sample, what is your best point estimate of the population mean? Compare your point estimates from the question above (question 1), what conclusion can you draw? Include both the code/command and the output/graph.
+```{r}
+sample.county.large <- countyComplete %>% 
+  select(pop2010) %>% 
+  rep_sample_n(size = 300, reps = 1) 
+
+sample.county.large.histogram <- sample.county.large %>% 
+  ggplot() +
+  geom_histogram(aes(pop2010)) +
+  labs(title = "histogram for sample size 300") 
+  #this histogram looks much more normal with a log-scale X. 
+  #scale_x_log10() 
+
+sample.county.large.histogram
+
+sample.stats.large <- sample.county.large %>% 
+  describe()
+
+sample.stats.large
+```
+
+The question of distribution of this dataset is starting to feel quite redundant as the data isn't normal to begin with.. The distribution of the sample has a mean of `125,291` with a median `22,695` so already we can tell this is a right skewed sample. When we look at the variable `skew`, we see it has a value `6.04` which reinforces the right bias of the variable. The spread is over 1 million. The sample would indicate the population mean is `99847`, where the true mean is `98233`. The larger sample better approximates the true mean.
+
+##N. 4-3
+3. Create and compare histograms of sample size 50 and 300, which one is closer to symmetry? Why or why not? Include both the code/command and the output/graph.
+```{r}
+#We drew the histograms already, so we only need to call them back again.
+sample.county.histogram
+sample.county.large.histogram
+```
+
+What we remember from the population.histogram is that the bin for the lowest value was somewhere in the thousands. Both sample sizes have relatively similar shaped distributions to each other and to the population with extremely long right tails and zero symmetry. Neither of these are symmetrical samples and neither will _ever_ be symmetrical samples unless we utilize a log-scale for the X axis. 
+
