@@ -152,3 +152,33 @@ class.samp.tidy %>%
 ```
 
 nice.
+
+```{r}
+DescTools::MeanCI(class.samp.tidy$Gr.Liv.Area,
+                  conf.level = 0.95,
+                  sides = "two.sided")
+
+library(Rmisc)
+by.replicate <- class.samp.tidy %>% 
+  group_by(replicate) 
+
+by.replicate %>% 
+  do(CI(, ci = 0.95))
+
+library(broom)
+tibble(a = list(c(1, 2), c(3, 4))) %>%
+  mutate(ttest = map(a, t.test, conf.level = 0.95) %>% 
+           map(tidy) %>% 
+           map(~ select(., conf.low, conf.high))) %>%
+  unnest(ttest, .drop = FALSE)
+
+class.samp.tidy %>% 
+  group_by(replicate) %>% 
+  nest(Gr.Liv.Area) %>%
+  mutate(ttest = map(replicate, t.test, conf.level = 0.95) %>% 
+           map(tidy) %>% 
+           map(~ select(., conf.low, conf.high))) %>%
+  unnest(ttest, .drop = FALSE)
+
+```
+
