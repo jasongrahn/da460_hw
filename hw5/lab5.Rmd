@@ -1,0 +1,115 @@
+---
+title: "hw5"
+author: "jason grahn"
+date: "11/2/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(moderndive)
+library(psych)
+
+download.file("http://www.openintro.org/stat/data/ames.RData", destfile = "ames.RData")
+load("ames.RData")
+```
+
+#R portion
+```{r using this from the lab}
+population <- ames$Gr.Liv.Area
+
+set.seed(40)
+samp <- sample(population, 60)
+
+a <- 1 - 0.05/2
+ci.95 <- qnorm(a)
+
+sample_mean <- mean(samp)
+se <- sd(samp) / sqrt(60)
+lower <- sample_mean - ci.95 * se
+upper <- sample_mean + ci.95 * se
+
+mean(population)
+
+samp_mean <- rep(NA, 50)
+samp_sd <- rep(NA, 50)
+
+n <- 60
+
+for(i in 1:50){
+  samp <- sample(population, n) 
+  samp_mean[i] <- mean(samp)    
+  samp_sd[i] <- sd(samp)        
+}
+
+lower_vector <- samp_mean - ci.95 * samp_sd / sqrt(n) 
+upper_vector <- samp_mean + ci.95 * samp_sd / sqrt(n)
+
+c(lower_vector[1], upper_vector[1])
+
+```
+
+
+##1
+###Using the following function (which was downloaded with the data set), plot all intervals. 
+```{r}
+plot_ci(lower_vector, upper_vector, mean(population))
+```
+
+###What proportion of your confidence intervals include the true population mean? 
+```{r}
+p <- 1-(2/50)
+p
+```
+
+The proportion of my confidence intervals that included the true population mean was `r p * 100`.
+
+###Is this proportion exactly equal to the confidence level? If not, explain why.
+
+No, this proportion does _not_ exactly equal the confidence level. This is because confidence intervals don't capture exact values. Instead, they predict a range that is _about as likely as the confidence interval_ to contain the true value of the population.
+
+##2. 
+###Pick a confidence level of your choice (NOT 95% or 99%). What is the appropriate critical value? Run it and attach the output. 
+
+I'll use a 90% confidence interval. 
+```{r}
+ci.90 <- qnorm(.95)
+ci.90
+```
+
+###How does it differs from the 95% confidence interval?
+The critical value is `r ci.90`. The critical value for a 95% confidence interval is approximately 1.96. This value is smaller. In application, this makes the inverval smaller, but this means a given sample is more likely to be outside the true population mean.
+
+
+##3. Calculate 50 confidence intervals at the confidence level you chose in the previous question. You do not need to obtain new samples, simply calculate new intervals based on the sample means and standard deviations you have already collected. Using the plot_ci function, plot all intervals and calculate the proportion of intervals that include the true population mean. How does this percentage compare to the confidence level selected for the intervals?
+
+```{r}
+set.seed(300)
+samp_mean <- rep(NA, 50)
+samp_sd <- rep(NA, 50)
+
+n <- 60
+
+for(i in 1:50){
+  samp <- sample(population, n)
+  samp_mean[i] <- mean(samp)
+  samp_sd[i] <- sd(samp)
+  }
+
+lower <- samp_mean - ci.90 * samp_sd / sqrt(n)
+upper <- samp_mean + ci.90 * samp_sd / sqrt(n)
+
+c(lower[1],upper[1])
+```
+
+```{r}
+plot_ci(lower, upper, mean(population))
+```
+
+```{r}
+q <- 1-(4/50)
+q
+```
+
+Four of the 50 samples intervals did not include the true population mean of ~1499.69. This is `r q*100`%. This makes sense, given we set the CI to a lower level with 10% significance.

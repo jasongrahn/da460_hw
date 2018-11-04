@@ -1,115 +1,197 @@
 ---
-title: "hw5"
+title: "lab5"
 author: "jason grahn"
-date: "11/2/2018"
+date: "10/24/2018"
 output: word_document
 ---
 
-```{r setup, include=FALSE}
+#Inference for numerical data
+```{r load packages, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(moderndive)
 library(psych)
-
-download.file("http://www.openintro.org/stat/data/ames.RData", destfile = "ames.RData")
-load("ames.RData")
 ```
 
-#R portion
-```{r using this from the lab}
-population <- ames$Gr.Liv.Area
-
-set.seed(40)
-samp <- sample(population, 60)
-
-a <- 1 - 0.05/2
-ci.95 <- qnorm(a)
-
-sample_mean <- mean(samp)
-se <- sd(samp) / sqrt(60)
-lower <- sample_mean - ci.95 * se
-upper <- sample_mean + ci.95 * se
-
-mean(population)
-
-samp_mean <- rep(NA, 50)
-samp_sd <- rep(NA, 50)
-
-n <- 60
-
-for(i in 1:50){
-  samp <- sample(population, n) 
-  samp_mean[i] <- mean(samp)    
-  samp_sd[i] <- sd(samp)        
-}
-
-lower_vector <- samp_mean - ci.95 * samp_sd / sqrt(n) 
-upper_vector <- samp_mean + ci.95 * samp_sd / sqrt(n)
-
-c(lower_vector[1], upper_vector[1])
-
+```{r load data}
+download.file("http://www.openintro.org/stat/data/nc.RData", destfile = "nc.RData")
+load("nc.RData")
+glimpse(nc)
 ```
 
 
 ##1
-###Using the following function (which was downloaded with the data set), plot all intervals. 
+###What are the cases in this data set? How many cases are there in our sample?
+
+The cases in this dataset, otherwise known as observations, are births recorded in North Carolina. `glimpse()` shows us there are 1000 observations. We can also run summary() and review any of the categorical variables like `mature`. The summation of which comes to 1000.
 ```{r}
-plot_ci(lower_vector, upper_vector, mean(population))
+summary(nc)
 ```
 
-###What proportion of your confidence intervals include the true population mean? 
+##2
+###Make a side-by-side boxplot of habit and weight. What does the plot highlight about the relationship between these two variables?
 ```{r}
-p <- 1-(2/50)
-p
+nc %>% 
+  #There are NAs in the data that need to be removed.
+  filter(!is.na(habit)) %>% 
+  #now plot the results.
+  ggplot(aes(x = habit, y = weight)) +
+  geom_boxplot() +
+  theme_light()
+
+by(nc$weight, nc$habit, mean)
 ```
 
-The proportion of my confidence intervals that included the true population mean was `r p * 100`.
+We definitely have an observed difference. While the medians are similar, they *are* different. The boxplot shows smokers have a tighter tolerance for weight, and that non-smokers have much more variation with weights.
 
-###Is this proportion exactly equal to the confidence level? If not, explain why.
-
-No, this proportion does _not_ exactly equal the confidence level. This is because confidence intervals don't capture exact values. Instead, they predict a range that is _about as likely as the confidence interval_ to contain the true value of the population.
-
-##2. 
-###Pick a confidence level of your choice (NOT 95% or 99%). What is the appropriate critical value? Run it and attach the output. 
-
-I'll use a 90% confidence interval. 
+##3
+###Check if the conditions necessary for inference are satisfied. Note that you will need to obtain sample sizes to check the conditions. You can compute the group size using the same by command above but replacing mean with length.
 ```{r}
-ci.90 <- qnorm(.95)
-ci.90
+by(nc$weight, nc$habit, length)
+```
+ 
+The conditions seem to be met: The 1,000 observations are likely less than 10% of the population to ensure the sampling is random, which fulfills independence. We have more than 30 samples, which satifies large number central limit theorem. Though distributions shown on box and whisker plots have outliers, these seem reasonable for the sample size. 
+
+##4
+###Write the hypotheses for testing if the average weights of babies born to smoking and non-smoking mothers are different.
+
+    * H0 = The average weights of babies born to smoking and non-smoking mothers are not different
+    * HA = The average weights of babies born to smoking and non-smoking mothers are different
+    
+##5
+###Change the type argument to “ci” to construct and record a confidence interval for the difference between the weights of babies born to smoking and non-smoking mothers.
+```{r}
+#inference(y = nc$weight, 
+#          x = nc$habit, 
+#          est = "mean", 
+#          type = "ht", 
+#          null = 0, 
+#          alternative = "twosided", 
+#          method = "theoretical")
+
+inference(y = nc$weight, 
+          x = nc$habit, 
+          est = "mean", 
+          type = "ci", 
+          null = 0, 
+          alternative = "twosided", 
+          method = "theoretical")
+```
+The `95% Confidence interval` is `(0.0534 , 0.5777 )` and this command also ends up making the same boxplot we made before. 
+
+#Inference for categorical data
+
+##1 
+###In the first paragraph, several findings are reported. Do these percentages appear to be _sample statistics_ (derived from the data sample) or _population parameters_?
+
+The _second_ paragraph states: 
+    
+    * 59% of the world said that they think of themselves as religious person, 23% think of themselves as not religious whereas 13% think of themselves as convinced atheists. However, when we compare this to the Irish population, only 47% consider themselves religious, placing Ireland low on the index of being religious coming in at position 43 out of 57 countries. 
+    
+It is not feasible to conduct this level of analysis with _every_ individual in the world. These appear to be sample statistics. 
+
+##2
+###The title of the report is “Global Index of Religiosity and Atheism”. To generalize the report’s findings to the global human population, what must we assume about the sampling method? Does that seem like a reasonable assumption?
+
+We must assume the this is a random sample that has a high enough _n_ to account for a reasonable percentage of the global population and that each interviewee / respondant was part of a simple random selection process. 
+
+##3
+###What does each row of Table 6 correspond to? What does each row of atheism correspond to?
+```{r download part 2 data} 
+download.file("http://www.openintro.org/stat/data/atheism.RData", destfile = "atheism.RData")
+load("atheism.RData")
+glimpse(atheism)
+#View(atheism)
 ```
 
-###How does it differs from the 95% confidence interval?
-The critical value is `r ci.90`. The critical value for a 95% confidence interval is approximately 1.96. This value is smaller. In application, this makes the inverval smaller, but this means a given sample is more likely to be outside the true population mean.
+The rows in `Table 6` of [the article](https://sidmennt.is/wp-content/uploads/Gallup-International-um-tr%C3%BA-og-tr%C3%BAleysi-2012.pdf) is titled `GLOBAL RELIGIOSITY AND ATHEISM INDEX FOR 2012`. The table provides a country, the sample size of those surveyed, and the percent of respondants as they self-selected their level of religiousity. 
 
-
-##3. Calculate 50 confidence intervals at the confidence level you chose in the previous question. You do not need to obtain new samples, simply calculate new intervals based on the sample means and standard deviations you have already collected. Using the plot_ci function, plot all intervals and calculate the proportion of intervals that include the true population mean. How does this percentage compare to the confidence level selected for the intervals?
-
+The observations in the `atheism` data are a given country, the year of the survey, and the respondants selection of atheist or non-atheist. This appears to be individual line-item responses.
 ```{r}
-set.seed(300)
-samp_mean <- rep(NA, 50)
-samp_sd <- rep(NA, 50)
+nat.summary <- atheism %>% 
+       group_by(nationality, response) %>% 
+       summarize(count = n())
 
-n <- 60
-
-for(i in 1:50){
-  samp <- sample(population, n)
-  samp_mean[i] <- mean(samp)
-  samp_sd[i] <- sd(samp)
-  }
-
-lower <- samp_mean - ci.90 * samp_sd / sqrt(n)
-upper <- samp_mean + ci.90 * samp_sd / sqrt(n)
-
-c(lower[1],upper[1])
+head(nat.summary, 10)
 ```
 
+##4
+###Using the command below, create a new dataframe called us12 that contains only the rows in atheism associated with respondents to the 2012 survey from the United States. 
 ```{r}
-plot_ci(lower, upper, mean(population))
+us12 <- subset(atheism, nationality == "United States" & year == "2012")
+
+#or the tidy version of same
+us12.tidy <- atheism %>% 
+  filter(nationality == "United States",
+         year == "2012")
 ```
 
+###Next, calculate the proportion of atheist responses. 
 ```{r}
-q <- 1-(4/50)
-q
+us12atheists <- us12.tidy %>% 
+  group_by(response) %>% 
+  summarise(response_count = n()) %>%
+  mutate(proportion = response_count / nrow(us12.tidy)) %>% 
+  filter(response == "atheist")
+
+us12atheists
 ```
 
-Four of the 50 samples intervals did not include the true population mean of ~1499.69. This is `r q*100`%. This makes sense, given we set the CI to a lower level with 10% significance.
+###Does it agree with the percentage in Table 6? If not, why?
+Yes, this agrees with the percentage in Table 6, which shows a US atheist population of `5%`. The proportion of atheists by calculation of the openintro data is `4.99%`, which is close enough to 5% to make this acceptable as agreeing.  
+
+##5
+###Write out the conditions for inference to construct a 95% confidence interval for the proportion of atheists in the United States in 2012. Are you confident all conditions are met?
+The conditions are:
+
+    1. The observations are independent. This condition is met because assume that the samples are randomly selected. 
+    2. This also requires a sample size of np >= 10 and n(1-p)>=10. This condition is met.
+        * np = 1002*0.05 = 50, which is >= 10. 
+        * n(1-p) = 1002*0.95 = 952, which is also >= 10.
+        
+```{r}
+us12$response %>% 
+inference(.,
+          est = "proportion", 
+          type = "ci", 
+          method = "theoretical", 
+          success = "atheist")
+
+#describe(us12$response)
+```
+
+##6
+###Based on the R output, what is the margin of error for the estimate of the proportion of the proportion of atheists in US in 2012?
+
+Assuming a 95% confidence interval: 
+```{r}
+#we'll need to make the confidence interval value for .95
+a <- 1 - 0.05/2
+ci.95 <- qnorm(a)
+
+#one way is to use the SE from above and manufacture the Margin of error
+margin.error <- ci.95* 0.0069
+margin.error
+
+#but that's not the best for reproducibility. Let's make the code do the thinking
+p <- us12atheists$proportion
+q <- 1-p                                    
+
+#the use P*Q to make the standard error
+stderr <- sqrt( (p*q) / nrow(us12.tidy) )
+#stderr
+
+#then use the confidence interval to make the margin of error:
+margerr <- ci.95 * stderr 
+margerr
+```
+
+The margin of error is either `r margin.error` or `r margerr` depending on how it's calculated. Either way we can round this to 0.0135.
+
+##7
+###Using the inference function, calculate confidence intervals for the proportion of atheists in 2012 in two other countries of your choice, and report the associated margins of error. Be sure to note whether the conditions for inference are met. It may be helpful to create new data sets for each of the two countries first, and then use these data sets in the inference function to construct the confidence intervals.
+```{r}
+
+```
+
+
