@@ -190,8 +190,136 @@ The margin of error is either `r margin.error` or `r margerr` depending on how i
 
 ##7
 ###Using the inference function, calculate confidence intervals for the proportion of atheists in 2012 in two other countries of your choice, and report the associated margins of error. Be sure to note whether the conditions for inference are met. It may be helpful to create new data sets for each of the two countries first, and then use these data sets in the inference function to construct the confidence intervals.
-```{r}
+```{r run same for FRANCE}
+fr12 <- subset(atheism, nationality == "France" & year == "2012")
 
+#how many values available from n to determine if 
+fr.rows <- nrow(fr12)
+
+#test conditions
+#This also requires a sample size of np >= 10 and n(1-p)>=10 to determine if n is appropriate size
+fr_condition_1 <- if_else((fr.rows*0.05) >= 10, "Sample size is large and passes condition 1", "Sample size is not large and does not pass condition 1") 
+        
+fr_condition_2 <- if_else((np.fr*0.95) >= 10, "Sample size is large and passes condition 2", "Sample size is not large and does not pass condition 2")
+
+fr_condition_1
+fr_condition_2
+
+fr12$response %>% 
+inference(.,
+          est = "proportion", 
+          type = "ci", 
+          method = "theoretical", 
+          success = "atheist")
 ```
 
+```{r run same for CHINA}
+ch12 <- subset(atheism, nationality == "China" & year == "2012")
 
+#how many values available from n to determine if 
+ch.rows <- nrow(ch12)
+
+#test conditions
+#This also requires a sample size of np >= 10 and n(1-p)>=10 to determine if n is appropriate size
+ch_condition_1 <- if_else((ch.rows*0.05) >= 10, "Sample size is large and passes condition 1", "Sample size is not large and does not pass condition 1") 
+ch_condition_1   
+
+ch_condition_2 <- if_else((ch.rows*0.95) >= 10, "Sample size is large and passes condition 2", "Sample size is not large and does not pass condition 2") 
+ch_condition_2
+
+ch12$response %>% 
+inference(.,
+          est = "proportion", 
+          type = "ci", 
+          method = "theoretical", 
+          success = "atheist")
+```
+
+##8
+###Describe the relationship between p and me.
+```{r}
+n <- 1000
+p <- seq(0, 1, 0.01)
+me <- 2 * sqrt(p * (1 - p)/n)
+plot(me ~ p, ylab = "Margin of Error", xlab = "Population Proportion")
+```
+
+The relationship between `p` and `me` is certainly non-linear! The graph shows a proportion of 0.5 is the proportion with the peak margin of error, following a strong arc of 0 ME at 0 proportion to 0 ME and 1.0 proportion (100%). We could say there's an inverse correlation between p and me as they move away from 0.5; but this is curvature, not straightline.
+
+##9
+###Describe the sampling distribution of sample proportions at n=1040 and p=0.1. Be sure to note the center, spread, and shape. 
+    
+    * Hint: Remember that R has functions such as mean to calculate summary statistics.
+    
+```{r}
+p <- 0.1
+n <- 1040
+p_hats <- rep(0, 5000)
+
+set.seed(30)
+for(i in 1:5000){
+  samp <- sample(c("atheist", "non_atheist"), n, replace = TRUE, prob = c(p, 1-p))
+  p_hats[i] <- sum(samp == "atheist")/n
+}
+
+hist(p_hats, main = "p = 0.1, n = 1040", xlim = c(0, 0.18))
+
+summary(p_hats)
+describe(p_hats) 
+```
+
+The sampling distribution is quite normal, with a `mean` and `median` of 0.1. The `range` is 0.07, and with a `skew` of 0.09 and a `standard error` of 0 we can be assured there is no tailing. 
+
+##10
+###Repeat the above simulation three more times but with modified sample sizes and proportions: for n=400 and p=0.1, n=1040 and p=0.02, and n=400 and p=0.02. Plot all four histograms together by running the  par(mfrow = c(2, 2)) command before creating the histograms. 
+```{r}
+#n=400 and p=0.1
+p <- 0.1
+n <- 400
+p_hats <- rep(0, 5000)
+for (i in 1:5000) {
+  samp <- sample(c("atheist", "non_atheist"), n, replace = TRUE, prob = c(p,1 - p))
+  p_hats[i] <- sum(samp == "atheist")/n
+  }
+describe(p_hats)
+
+#n=1040 and p=0.02
+p <- 0.02
+n <- 1040
+p_hats <- rep(0, 5000)
+for (i in 1:5000) {
+  samp <- sample(c("atheist", "non_atheist"), n, replace = TRUE, prob = c(p,1 - p))
+  p_hats[i] <- sum(samp == "atheist")/n
+  }
+describe(p_hats)
+
+#n=400 and p=0.02
+p <- 0.02
+n <- 400
+p_hats <- rep(0, 5000)
+for (i in 1:5000) {
+  samp <- sample(c("atheist", "non_atheist"), n, replace = TRUE, prob = c(p,1 - p))
+  p_hats[i] <- sum(samp == "atheist")/n
+  }
+describe(p_hats)
+
+#plotting
+par(mfrow = c(2,2))
+hist(p_hats, main = "p = 0.1, n = 1040", xlim = c(0, 0.18))
+hist(p_hats, main = "p = 0.02, n = 1040", xlim = c(0.0001, 0.05))
+hist(p_hats, main = "p = 0.1, n = 400", xlim = c(0, 0.18))
+hist(p_hats, main = "p = 0.02, n = 400", xlim = c(0.0001, 0.06))
+```
+
+###Describe the three new sampling distributions. Based on these limited plots, how does n appear to affect the distribution of p̂ ? How does p affect the sampling distribution?
+
+    * The first has a matching `mean` and `median` of 0.1, with a range of 0.11 and skew of 0.12. Skewness indicates there might be a slight right tail, which the histogram confirms.
+    * The second ALSO has a matching `mean` and `median`, but this time of 0.02. The range is much smaller at 0.03, but skewness increases to 0.23.  with a range of 0.11 and skew of 0.12. Skewness indicates there might be a slight right tail, providing support of a longer right tail. The histogram confirms this as well.
+    * The third have matching mean and median as well, both of 0.02. Range increases to 0.05 and skewness also increases to 0.34.  
+
+The size of `n` affects the shape and spread of the distribution, with larger samples providing closer estimates of the population proportion of `p`. The spread, also known as variability will decrease as sample size `n` increases. The larger `n` also changes the distribution shape to become more normal.
+
+##11
+###If you refer to Table 6, you’ll find that Australia has a sample proportion of 0.1 on a sample size of 1040, and that Ecuador has a sample proportion of 0.02 on 400 subjects. Let’s suppose for this exercise that these point estimates are actually the truth. Then given the shape of their respective sampling distributions, do you think it is sensible to proceed with inference and report margin of errors, as the reports does?
+
+It seems ok to move forward with the inference. Australia meets the conditions for the sampling distribution of p. Ecuador is a different story though. The data does not pass the success-failure condition as np is only 8. Eight is less than the prerequisite 10 necessary to continue. 
