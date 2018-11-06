@@ -200,7 +200,7 @@ fr.rows <- nrow(fr12)
 #This also requires a sample size of np >= 10 and n(1-p)>=10 to determine if n is appropriate size
 fr_condition_1 <- if_else((fr.rows*0.05) >= 10, "Sample size is large and passes condition 1", "Sample size is not large and does not pass condition 1") 
         
-fr_condition_2 <- if_else((np.fr*0.95) >= 10, "Sample size is large and passes condition 2", "Sample size is not large and does not pass condition 2")
+fr_condition_2 <- if_else((fr.rows*0.95) >= 10, "Sample size is large and passes condition 2", "Sample size is not large and does not pass condition 2")
 
 fr_condition_1
 fr_condition_2
