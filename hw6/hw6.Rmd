@@ -1,0 +1,50 @@
+---
+title: "hw6"
+author: "jason grahn"
+date: "11/13/2018"
+output: word_document
+---
+
+```{r load packages, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(moderndive)
+library(psych)
+```
+
+```{r load data}
+download.file("http://www.openintro.org/stat/data/nc.RData", destfile = "nc.RData")
+load("nc.RData")
+```
+
+##Inference for numerical data 
+###1. 
+Calculate a 95% confidence interval for the average length of pregnancies (weeks) and interpret it in context. Note that since you’re doing inference on a single population parameter, there is no explanatory variable, so you can omit the x variable from the function. 
+
+
+###2. 
+Calculate a new confidence interval for the same parameter at the 90% confidence level. You can change the confidence level by adding a new argument to the function: conflevel = 0.90. 
+
+
+###3. 
+Conduct a hypothesis test evaluating whether the average weight gained by younger mothers is different than the average weight gained by mature mothers. Make sure you include the hypotheses set up and final interpretation. 
+
+
+###4. 
+Determine the age cutoff for younger and mature mothers. Use a method of your choice, and explain how your method works. 
+
+
+###5. 
+Pick a pair of numerical and categorical variables and come up with a research question evaluating the relationship between these variables. Formulate the question in a way that it can be answered using a hypothesis test and/or a confidence interval. Answer your question using the inference function, report the statistical results, and also provide an explanation in plain language.
+
+##Inference for categorical data
+###6.
+Answer the following two questions using the inference function. As always, write out the hypotheses for any tests you conduct and outline the status of the conditions for inference. a. Is there convincing evidence that Spain has seen a change in its atheism index between 2005 and 2012? Hint: Create a new data set for respondents from Spain. Then use their responses as the first input on the inference, and use year as the grouping variable. b. Is there convincing evidence that the United States has seen a change in its atheism index between 2005 and 2012? 
+
+
+###7. 
+If in fact there has been no change in the atheism index in the countries listed in Table 4, in how many of those countries would you expect to detect a change (at a significance level of 0.05) simply by chance? 
+
+
+###8. 
+Suppose you’re hired by the local government to estimate the proportion of residents that attend a religious service on a weekly basis. According to the guidelines, the estimate must have a margin of error no greater than 1% with 95% confidence. You have no idea what to expect for pp. How many people would you have to sample to ensure that you are within the guidelines? Hint: Refer to your plot of the relationship between pp and margin of error. Do not use the data set to answer this question.
