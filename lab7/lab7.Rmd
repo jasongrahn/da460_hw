@@ -10,6 +10,8 @@ output: word_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(psych)
+library(modelr)
+library(moderndive)
 ```
 
 ```{r load data, include=FALSE}
@@ -24,13 +26,81 @@ I'd use a scatterplot.
 
 ###Plot this relationship using the variable at_bats as the predictor. Does the relationship look linear? If you knew a team’s at_bats, would you be comfortable using a linear model to predict the number of runs?
 
+The relationship does _not_ appear linear. When we plot a linear line against the scatter, we can see over half the points exist outside the confidence interval of the linear plot. Using `ggpubr` we also see the Pearson correlation factor is approximatly `0.61`.
 ```{r}
 plot(mlb11$runs ~ mlb11$at_bats, 
      main = "The relationship between runs and at Bats", 
      xlab = "At Bats", ylab = "Runs")
+
+#or using ggpubr from http://www.sthda.com/english/wiki/correlation-test-between-two-variables-in-r
+library("ggpubr")
+runs.bats.scatter <- ggscatter(mlb11, 
+          x = "at_bats", y = "runs", 
+          rug = TRUE,
+          #conf.int = TRUE, 
+          add = "reg.line", 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "At Bats", ylab = "Runs")
+
+runs.bats.scatter
 ```
 
+##2
+###Looking at your plot from the previous exercise, describe the relationship between these two variables. Make sure to discuss the form, direction, and strength of the relationship as well as any unusual observations.
 ```{r}
+cor(mlb11$runs, mlb11$at_bats)
 
+#or tidy style with moderndive::get_correlation
+mlb11 %>% 
+  get_correlation(runs ~ at_bats)
+```
+
+Our correlation as stated in the scatterplot is 0.61. This is positive but certainly not strong - noting that 0.7 is generally the accepted threshold for a "strong" relationship. There are outliers above and below that are easily identified outside of the confidence band on the plot.
+
+##3
+###Using plot_ss, choose a line that does a good job of minimizing the sum of squares. Run the function several times. What was the smallest sum of squares that you got? How does it compare to your neighbors?
+```{r}
+plot_ss(x = mlb11$at_bats, y = mlb11$runs)
+```
+
+This seems to be the smallest sum of squares I can find. I'm sure there's a more automated way to calculate this rather then hunt for this.
+
+##4
+###Fit a new model that uses homeruns to predict runs. Using the estimates from the R output, write the equation of the regression line. What does the slope tell us in the context of the relationship between success of a team and its home runs?
+
+```{r}
+ggscatter(mlb11, 
+          x = "homeruns", y = "runs", 
+          rug = TRUE,
+          conf.int = TRUE, add = "reg.line", 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Homeruns", ylab = "Runs")
+
+m1 <- lm(runs ~ homeruns, data = mlb11)
+summary(m1)
+```
+
+The formula is `runs` = 415.2389 + 1.8345 * `homeruns`. There's a positive relationship between homeruns and runs and the slope for `homerunes` of `1.8345` tells us that for every homerun, we can expect approximately 1.8 runs. The question explicitly asks about the "success of a team" - unfortunately this is extrapolation on the model as is. If we wanted to chart "success" we should first correlate _wins_ to _runs_; or at least predict _wins_ instead of _runs_. 
+
+##5
+###If a team manager saw the least squares regression line and not the actual data, how many runs would he or she predict for a team with 5,578 at-bats? Is this an overestimate or an underestimate, and by how much? In other words, what is the residual for this prediction?
+
+```{r}
+#we already built this graph, so let's just call it again.
+runs.bats.scatter
+```
+
+They'd have approximately 700 runs if they were JUST looking at the chart. This is an underestimate. Using `lm()` to generate a model of 0.6305 * `at bats` - 2789.2429, we'd calculate approximately 728 runs.
+
+There is no 5578 at bats available for inference, but the Philadelphia Phillies had 713 runs with 5579. This gives us grounds for comparision to conclude the model overestimated the runs by approximately 15 runs (728 - 713 = 15).
+
+```{r}
+runs.bats.model <- lm(runs ~ at_bats, data = mlb11) 
+summary(runs.bats.model)
+
+0.6305*5578 - 2789.2429
+
+mlb11 %>% 
+  filter(at_bats > 5570 & at_bats < 5600)
 ```
 
