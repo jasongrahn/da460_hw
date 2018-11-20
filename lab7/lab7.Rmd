@@ -1,0 +1,36 @@
+---
+title: "lab7"
+author: "jason grahn"
+date: "11/19/2018"
+output: word_document
+---
+
+#The R stuff
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(psych)
+```
+
+```{r load data, include=FALSE}
+download.file("http://www.openintro.org/stat/data/mlb11.RData", destfile = "mlb11.RData")
+load("mlb11.RData")
+```
+
+##1
+###What type of plot would you use to display the relationship between runs and one of the other numerical variables? 
+
+I'd use a scatterplot.
+
+###Plot this relationship using the variable at_bats as the predictor. Does the relationship look linear? If you knew a team’s at_bats, would you be comfortable using a linear model to predict the number of runs?
+
+```{r}
+plot(mlb11$runs ~ mlb11$at_bats, 
+     main = "The relationship between runs and at Bats", 
+     xlab = "At Bats", ylab = "Runs")
+```
+
+```{r}
+
+```
+
