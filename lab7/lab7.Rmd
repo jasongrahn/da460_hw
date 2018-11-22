@@ -104,3 +104,28 @@ mlb11 %>%
   filter(at_bats > 5570 & at_bats < 5600)
 ```
 
+##6
+###Is there any apparent pattern in the residuals plot? What does this indicate about the linearity of the relationship between runs and at-bats?
+
+```{r}
+plot(m1$residuals ~ mlb11$at_bats)
+abline(h = 0, lty = 3)  # adds a horizontal dashed line at y = 0
+```
+
+There's no obvious pattern in the residual plot. They appear randomly dispersed around the zero axis. The relationship appears generally linear, though I'm not a huge fan of the right side and that it only has data points above the axis. A linear regression model would probably be appropriate for the data.
+
+##7
+###Based on the histogram and the normal probability plot, does the nearly normal residuals condition appear to be met?
+```{r}
+hist(m1$residuals)
+qqnorm(m1$residuals)
+qqline(m1$residuals)  # adds diagonal line to the normal prob plot
+```
+
+The histogram show a nearly-normal distribution, which indicates linearity and a LM model would be acceptable. The normal probability (qq) plot shows some stepwise motion and the right tail is higher than the left in relation to the diagonal, but overall it isn't too terribly far from the line. I'd say normal residual conditions are met.
+
+##8
+###Based on the plot in (1), does the constant variability condition appear to be met?
+
+Points placed aound the least squares line look acceptably constant. I'd conclude the condition of constant variability has been met, yes. 
+
