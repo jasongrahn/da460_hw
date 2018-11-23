@@ -1,0 +1,168 @@
+---
+title: "hw7"
+author: "jason grahn"
+date: "11/23/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+#package load
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(modelr)
+library(moderndive)
+library(infer)
+library(ggpubr)
+
+#file download and load
+download.file("http://www.openintro.org/stat/data/mlb11.RData", destfile = "mlb11.RData")
+load("mlb11.RData")
+```
+
+#The R Part
+
+##1. 
+###Choose another traditional variable from mlb11 that you think might be a good predictor of runs. Produce a scatterplot of the two variables and fit a linear model. At a glance, does there seem to be a linear relationship? 
+```{r}
+#mlb11 %>% 
+#  select(runs, hits, homeruns, bat_avg, strikeouts, stolen_bases, wins) %>%
+#  pairs(.)
+
+runs.bat_avg.scatter <- ggscatter(mlb11, 
+          x = "bat_avg", y = "runs", 
+          rug = TRUE,
+          #conf.int = TRUE, 
+          add = "reg.line", 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Batting Average", ylab = "Runs")
+
+runs.bat_avg.scatter
+```
+
+At first flance, we appear to have a strong positive relationship between `hits` and `runs`.
+
+##2. 
+###How does this relationship compare to the relationship between runs and at_bats? Use the R2values from the two model summaries to compare. Does your variable seem to predict runs better than at_bats? How can you tell?
+```{r}
+at_bats.corr <- mlb11 %>% 
+  get_correlation(runs ~ at_bats) %>% 
+  rename(at_bats.corr = correlation)
+
+bat_avg.corr <- mlb11 %>% 
+  get_correlation(runs ~ bat_avg) %>% 
+  rename(bat_avg.corr = correlation)
+
+at_bats.corr
+bat_avg.corr
+
+#m0 <- lm(runs ~ at_bats, data = mlb11)
+#summary(m0) #0.3729
+
+m1 <- lm(runs ~ bat_avg, data = mlb11)
+#summary(m1) #0.6561
+```
+
+Correlation between `bat_avg` and `runs` is `r bat_avg.corr$bat_avg.corr` which is better than the Correlation between `at_bats` and `runs` which is `r at_bats.corr$at_bats.corr`. This seems to be a better predictor as the relationship is nearly 20% stronger. The Multiple R-squared for `at_bats` is _0.3729_ where `bat_avg` is _0.6561_; which is an impressive distance. Intuitively, it makes sense given a high batting average would be a key indicator for how often a run is made better than just going to bat. 
+
+##3. 
+###Now that you can summarize the linear relationship between two variables, investigate the relationships between runs and each of the other five traditional variables. Which variable best predicts runs? Support your conclusion using the graphical and numerical methods we’ve discussed (for the sake of conciseness, only include output for the best variable, not all five).
+```{r}
+#build a correlation plot for remaining variables.
+#this helps visualizize relationships
+pairs(~runs + hits + homeruns + strikeouts + stolen_bases + wins, data = mlb11)
+```
+
+```{r}
+#find best correlation between variables
+m2 <- lm(runs ~ hits, data = mlb11)
+#m3 <- lm(runs ~ homeruns, data = mlb11)
+#m4 <- lm(runs ~ strikeouts, data = mlb11)
+#m5 <- lm(runs ~ stolen_bases, data = mlb11)
+#m6 <- lm(runs ~ wins, data = mlb11)
+
+summary(m2) #0.6419
+#summary(m3) #0.6266
+#summary(m4) #0.1694
+#summary(m5) #0.002914
+#summary(m6) #0.361
+```
+
+The highest correlation to `runs` from the remaining variables is with `hits` at approximately 0.8012.
+
+##4. 
+###Now examine the three newer variables. These are the statistics used by the author of Moneyball to predict a team’s success. In general, are they more or less effective at predicting runs that the old variables? Explain using appropriate graphical and numerical evidence. 
+```{r}
+#build a correlation plot for remaining variables.
+#this helps visualizize relationships
+pairs(~runs + new_onbase + new_slug + new_obs, data = mlb11)
+```
+
+
+```{r}
+#find best correlation between variables
+m7 <- lm(runs ~ new_onbase, data = mlb11)
+summary(m7) #0.8491
+#mlb11 %>% get_correlation(runs ~ new_onbase) #0.9214691
+runs.new_onbase.scatter <- ggscatter(mlb11, 
+          x = "new_onbase", y = "runs", 
+          rug = TRUE,
+          #conf.int = TRUE, 
+          add = "reg.line", 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "new_onbase", ylab = "Runs")
+runs.new_onbase.scatter
+
+m8 <- lm(runs ~ new_slug, data = mlb11)
+summary(m8) #0.8969
+#mlb11 %>% get_correlation(runs ~ new_slug) #0.9470324
+runs.new_slug.scatter <- ggscatter(mlb11, 
+          x = "new_slug", y = "runs", 
+          rug = TRUE,
+          #conf.int = TRUE, 
+          add = "reg.line", 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "new_slug", ylab = "Runs")
+runs.new_slug.scatter
+
+m9 <- lm(runs ~ new_obs, data = mlb11)
+summary(m9) #0.9349
+#mlb11 %>% get_correlation(runs ~ new_obs) #0.9669163
+runs.new_obs.scatter <- ggscatter(mlb11, 
+          x = "new_obs", y = "runs", 
+          rug = TRUE,
+          #conf.int = TRUE, 
+          add = "reg.line", 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "new_obs", ylab = "Runs")
+runs.new_obs.scatter
+```
+
+These three new variables show much stronger positive relationships with `runs`. The Multiple R-Squared figures for these three new variables are _0.8491_ for `new_onbase`, _0.8969_ for `new_slug`, and _0.9349_ for `new_obs` - all quite higher than our traditional measurements.
+
+Of all ten variables we’ve analyzed, which seems to be the best predictor of runs? Using the limited (or not so limited) information you know about these baseball statistics, does your result make sense? 
+
+Of all 10 variables, `new_obs` shows the most promise with a Multiple R-Squared so close to _1_ and a correlation of approximately _0.97_
+
+##5. 
+###Check the model diagnostics for the regression model with the variable you decided was the best predictor for runs.
+```{r}
+#residual distribution
+plot(m9$residuals ~ mlb11$new_obs)
+abline(h = 0, lty = 3)
+```
+Residual plot shows linear behaviour with no obvious patterns. The points appear to be randomly dispersed about the zero-axis. A linear regression model seems appropriate modeling.
+
+```{r}
+#histogram of residuals
+hist(m9$residuals)
+```
+The histogram shows nearly-normal distribution of the data, with maybe a slightly-right skew. This provides indication of normal residual conditions.
+
+```{r}
+#normal probability plot of residuals
+qqnorm(m9$residuals)
+qqline(m9$residuals)
+```
+
+The quantile-quantile plot shows linearity of the points, without much distance from the linear line. I would agree that a general linear model would be sufficient for predicting `runs` based on `new_obs`.
+
