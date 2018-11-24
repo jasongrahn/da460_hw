@@ -12,10 +12,12 @@ library(tidyverse)
 library(psych)
 library(modelr)
 library(moderndive)
+library(infer)
 ```
 
 ```{r load data, include=FALSE}
-download.file("http://www.openintro.org/stat/data/mlb11.RData", destfile = "mlb11.RData")
+download.file("http://www.openintro.org/stat/data/mlb11.RData", 
+              destfile = "mlb11.RData")
 load("mlb11.RData")
 ```
 
@@ -129,3 +131,57 @@ The histogram show a nearly-normal distribution, which indicates linearity and a
 
 Points placed aound the least squares line look acceptably constant. I'd conclude the condition of constant variability has been met, yes. 
 
+
+
+#appendix
+The discussion calls for finding something else that utilizes regression in R. 
+```{r}
+library(infer)
+mlb11 %>% 
+  specify(formula = wins ~ runs) %>% 
+  hypothesize(null = "independence") %>% 
+  generate(reps = 1000) %>% 
+  calculate(stat = "slope") %>% 
+  ggplot() +
+  geom_histogram(aes(stat))
+```
+ 
+ ok that's fun. let's look at the R book about regressions. 
+ 
+```{r}
+
+#reuse the m1 model from the assignment
+m1 <- lm(runs ~ homeruns, data = mlb11)
+
+#gimme that regression table
+get_regression_table(m1)
+summary(m1)
+anova(m1)
+```
+
+
+```{r}
+regression_points <- get_regression_points(m1)
+
+regression_points %>% 
+  ggplot() +
+  geom_histogram(aes(residual), bins = 5)
+
+regression_points %>% 
+  ggplot() +
+  geom_point(aes(homeruns, residual)) +
+  geom_hline(yintercept = 0)
+```
+
+```{r}
+#and I found this fancy correlogram
+library(corrgram)
+corrgram(mlb11 %>% 
+           select(runs, strikeouts, stolen_bases, wins, homeruns, bat_avg, hits), 
+         order=TRUE, 
+         lower.panel=panel.ellipse,
+         upper.panel=panel.pts, 
+         text.panel=panel.txt,
+         diag.panel=panel.minmax, 
+         main="MLB11 Data in PC2/PC1 Order")
+```
