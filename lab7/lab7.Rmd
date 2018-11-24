@@ -184,4 +184,6 @@ corrgram(mlb11 %>%
          text.panel=panel.txt,
          diag.panel=panel.minmax, 
          main="MLB11 Data in PC2/PC1 Order")
+
+#this is pretty sweet!
 ```
