@@ -5,7 +5,9 @@ date: "11/24/2018"
 output: word_document
 ---
 
+#The R Part
 ```{r setup, include=FALSE}
+#grab packages
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(psych)
@@ -13,5 +15,300 @@ library(modelr)
 library(moderndive)
 library(infer)
 library(corrgram)
+
+#grab data
+download.file("http://www.openintro.org/stat/data/evals.RData", 
+              destfile = "evals.RData")
+load("evals.RData")
 ```
 
+##1
+###Is this an observational study or an experiment? The original research question posed in the paper is whether beauty leads directly to the differences in course evaluations. Given the study design, is it possible to answer this question as it is phrased? If not, rephrase the question.
+
+This is an observational study. The primary indicator is that there are no control or experimental groupings. With an observation study we may not be able to provide causation, but we can build a string inference based on correlation. We *can* ask if an instructors beauty has a positive or negative correlation on student course evaluation.
+
+##2
+###Describe the distribution of score. Is the distribution skewed? What does that tell you about how students rate courses? Is this what you expected to see? Why, or why not?
+```{r}
+evals %>% 
+  ggplot() + 
+  theme_light() + 
+  geom_histogram(aes(x = score))
+
+summary(evals$score)
+```
+
+The distribution of `score` is unimodal with a strong right skew. From this graph, we could infer that students tend to give higher scores more often than lower scores. We would _expect_ a normal distribution, but with a `mean` of 4.175 and a `median` of 4.3, . Perhaps this is related to some biased questions within the evaluation? 
+
+##3
+###Excluding score, select two other variables and describe their relationship using an appropriate visualization (scatterplot, side-by-side boxplots, or mosaic plot).
+```{r}
+evals_plot <- evals %>% 
+  ggplot() + 
+  theme_light()
+
+evals_plot +
+  geom_boxplot(aes(x = pic_color, y = bty_avg)) 
+
+evals_plot + 
+  geom_histogram(aes(bty_avg)) + 
+  facet_grid(rows = vars(pic_color))
+```
+
+The boxplot showcases that, while the spread of `bty_avg` for a color picture is larger with higher uppper scores, a black & white picture has a higher assocated `bty_avg`. There seems to be a relationship here. 
+
+The side by side histograms reflect the same information that the boxplots related, but _also_ show that color pictures simply receive more scores more often.
+
+##3
+###Replot the scatterplot, but this time use the function jitter() on the \(y\)- or the \(x\)-coordinate. (Use ?jitter to learn more.) What was misleading about the initial scatterplot?
+```{r}
+#the original plot
+plot(evals$score ~ evals$bty_avg)
+
+#ggplot is easier to modify than plot() when it comes to additional commands.
+evals_plot + 
+  geom_jitter(aes(bty_avg, score), alpha = 0.5)
+```
+
+The original plot was misleading because it didn't showcase all available points. Where the original simply overlays points on top of each other, adding `jitter` to a scatterplot we can differentuate these overlapping points. Another way of doing this would be heavy use of `alpha` which shows positions with more dense point population by making them darker. 
+
+##4
+###Let’s see if the apparent trend in the plot is something more than natural variation. Fit a linear model called m_bty to predict average professor score by average beauty rating and add the line to your plot using abline(m_bty). Write out the equation for the linear model and interpret the slope. Is average beauty score a statistically significant predictor? Does it appear to be a practically significant predictor?
+```{r}
+#according to the book
+m_bty <- lm(score ~ bty_avg, data = evals)
+
+plot(jitter(evals$score) ~ jitter(evals$bty_avg))
+abline(m_bty)
+summary(m_bty)
+
+#and the more usable version using geom_smooth for the LM line of that 
+#relationship: 
+evals %>% 
+  ggplot(aes(x = bty_avg, y = score)) +
+  theme_light() +
+  geom_jitter() +
+  geom_smooth(method = lm)
+
+cor(evals$score, evals$bty_avg)
+get_regression_table(m_bty)
+```
+
+The linear model for this relationship is 
+
+    score = 0.06664*bty_avg + 3.88034
+
+The interpretation for the slope *0.06664* is that for every positive increment change in `bty_avg`, we reflect a *0.06664* positive change in evaluation score.
+
+Running anova(m_bty) reflects that using bty_avg is a statisically significant predictor with a p-value of approximately zero. However, the slope is so low that this does not appear to be a _practically_ significant predictor.
+
+```{r eval=FALSE, include=FALSE}
+library(corrgram)
+corrgram(evals %>% 
+           select(score,age,cls_perc_eval,cls_did_eval,cls_students,bty_avg), 
+         order=TRUE, 
+         lower.panel=panel.ellipse,
+         upper.panel=panel.pts, 
+         text.panel=panel.txt,
+         diag.panel=panel.minmax, 
+         main="MLB11 Data in PC2/PC1 Order")
+```
+
+##5
+###Use residual plots to evaluate whether the conditions of least squares regression are reasonable. Provide plots and comments for each one (see the Simple Regression Lab for a reminder of how to make these).
+```{r least squares regression plot}
+#borrowed this code from https://drsimonj.svbtle.com/visualising-residuals to build a linear regression plot
+# Steps 1 and 2 build the model and make it a data frame
+d <- lm(score ~ bty_avg, data = evals) %>% 
+       broom::augment()
+
+# Steps 3 and 4 build the plot
+ggplot(d, aes(x = bty_avg, y = score)) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  geom_segment(aes(xend = bty_avg, yend = .fitted), alpha = .2) +  
+  # Note `.fitted`
+  geom_point(aes(alpha = abs(.resid))) +  # Note `.resid`
+  guides(alpha = FALSE) +
+  geom_point(aes(y = .fitted), shape = 1) +  # Note `.fitted`
+  theme_bw()
+```
+
+This is merely a visualization for the gut-check. My initial response is that thre are a huge collection of potential outliers and we'll end up rejecting this model.
+
+```{r}
+bty_regression_points <- get_regression_points(
+  lm(score ~ bty_avg, data = evals)
+  )
+
+bty_regression_points %>% 
+  ggplot() + 
+  theme_light() +
+  geom_histogram(aes(residual), fill = "lightgrey", color = "darkgrey")
+
+#describe(bty_regression_points)
+```
+
+The histogram of residuals shows left skewness, which is reaffirmed with a skew factor of `-0.71`. This isn't terrible, but it also isn't great.
+
+```{r qqplot}
+ggplot(bty_regression_points, aes(sample = residual)) +
+  stat_qq() +
+  stat_qq_line(color = "red")
+```
+
+Though points generally hug the line, this QQ plot drops off on the upper end by quite a bit. 
+
+```{r histogram}
+bty_regression_points %>% 
+  ggplot() +
+  geom_jitter(aes(bty_avg, residual), alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red")
+```
+
+The residual plot for bty shows weight under the zero residual line, though they DO appear generally constant, without any specific sort of pattern.
+
+
+Conditions for the least squares line are Linearity, Nearly Normal residuals, and Constant Variability.
+
+    * Linearity: The data show generally positive linearity.
+    * Nearly Normal residuals: The Histogram of residuals show a left skewed distribution. The residuals normal probability (qq) plot show that the points fall off the line at the bottom by a bit, and most definitely fall from the line at the upper end.
+    * Constant Variability: From the residual plot, we can observe that there seems to have constant variability.
+
+We have to assume independence given we are not provided inforamation regarding the sampling methods. 
+
+##7
+###P-values and parameter estimates should only be trusted if the conditions for the regression are reasonable. Verify that the conditions for this model are reasonable using diagnostic plots.
+
+```{r}
+m_bty_gen <- lm(score ~ bty_avg + gender, data = evals)
+
+m_bty_regression_points <- get_regression_points(m_bty_gen)
+
+m_bty_regression_points %>% 
+  ggplot() + 
+  theme_light() +
+  geom_histogram(aes(residual), fill = "lightgrey", color = "darkgrey") +
+  labs(title = "Histogram of residuals")
+
+m_bty_regression_points %>% 
+  ggplot(aes(sample = residual)) +
+  theme_light() +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  labs(title = "QQ of residuals")
+
+m_bty_regression_points %>% 
+  ggplot() +
+  geom_point(aes(bty_avg, residual), alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red") +
+  labs(title = "Residual plot")
+
+m_bty_regression_points %>% 
+  ggplot() +
+  theme_light() + 
+  geom_boxplot(aes(gender, residual)) +
+  geom_hline(yintercept = 0, color = "red") +
+  labs(title = "gender vs residuals boxplot")
+
+m_bty_regression_points %>% 
+  ggplot() +
+  theme_light() + 
+  geom_boxplot(aes(gender, score)) +
+  #geom_hline(yintercept = 0, color = "red") +
+  labs(title = "gender vs score boxplot")
+```
+
+There's at least 16 different plots we could make of these data, so I hope the above suffice. What we learn from looking at them can be simplified into a few succinct statements: 
+
+    * Residuals appear to be nearly normal.
+    * Variability within bty_avg and residuals is still nearly constant.
+    * Each variable seems to be related to the outcome with some degree of linearity.
+
+That said, some potential faults: 
+
+    1. The histogram of residuals still suggest a left skew.
+    2. The residuals still drop off the line on the upper end of the normal probability(qq) plot.
+
+##8
+###Is bty_avg still a significant predictor of score? Has the addition of gender to the model changed the parameter estimate for bty_avg?
+```{r}
+summary(m_bty_gen)
+```
+
+Yes, `bty_avg` is still a _statistically_ valid predictor for score. Adding the gendermale parameter to the model has increasedthe parameter estimate for `bty_avg` from 0.06664 to 0.07416. It still isn't very practial.  
+
+The Multiple R-Squared is rather poor at 0.059. While we might have proper statistical significance, I wouldn't use this model. 
+
+##9
+###What is the equation of the line corresponding to males? (Hint: For males, the parameter estimate is multiplied by 1.) For two professors who received the same beauty rating, which gender tends to have the higher course evaluation score?
+```{r}
+multiLines(m_bty_gen)
+get_regression_table(m_bty_gen)
+```
+
+The equation for the line corresponding to males is 
+
+    Score = 3.747 + 0.172 + 0.074(avg_bty). 
+    
+The equation for females is 
+
+    Score = 3.747 + 0.074(avg_bty)
+
+The effect here is that for any given point on the line, a male professor will have a score approximately 0.172 points higher than a given female.
+
+##10
+###Create a new model called m_bty_rank with gender removed and rank added in. How does R appear to handle categorical variables that have more than two levels? Note that the rank variable has three levels:  teaching, tenure track, tenured.
+```{r}
+m_bty_rank <- evals %>% 
+  lm(score ~ bty_avg + rank, data = .)
+summary(m_bty_rank)
+multiLines(m_bty_rank)
+```
+
+For a categorical variable with greater than two levels, R creates additional variables for every level greater than 1. Here, we've created `ranktenure track` and `ranktenured`. 
+
+```{r}
+#################################
+#                               #
+# this is where you've left off #
+#                               #
+#################################
+```
+
+The interpretation of the coefficients in multiple regression is little bit different from that of simple regression. The estimate for bty_avg (0.06783) shows how much higher a group of professors is expected to score if they have a beauty rating that is one point higher while holding all other variables constant. In this case, only professors of the same rank with bty_avg scores that are one point apart.
+
+
+##11
+###Which variable would you expect to have the highest p-value in this model? Why? Hint: Think about which variable would you expect to not have any association with the professor score.
+
+
+##12
+###Check your suspicions from the previous exercise. Include the model output in your response.
+
+
+##13
+###Interpret the coefficient associated with the ethnicity variable.
+
+
+##14
+###Drop the variable with the highest p-value and re-fit the model. Did the coefficients and significance of the other explanatory variables change? (One of the things that makes multiple regression interesting is that coefficient estimates depend on the other variables that are included in the model.) If not, what does this say about whether or not the dropped variable was collinear with the other explanatory variables?
+
+
+##15
+###Using backward-selection and p-value as the selection criterion, determine the best model. You do not need to show all steps in your answer, just the output for the final model. Also, write out the linear model for predicting score based on the final model you settle on.
+
+
+##16
+###Verify that the conditions for this model are reasonable using diagnostic plots.
+
+
+##17
+###The original paper describes how these data were gathered by taking a sample of professors from the University of Texas at Austin and including all courses that they have taught. Considering that each row represents a course, could this new information have an impact on any of the conditions of linear regression?
+
+
+##18
+###Based on your final model, describe the characteristics of a professor and course at University of Texas at Austin that would be associated with a high evaluation score.
+
+
+##19
+###Would you be comfortable generalizing your conclusions to apply to professors generally (at any university)? Why or why not?
