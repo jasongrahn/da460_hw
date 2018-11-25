@@ -1,0 +1,17 @@
+---
+title: "lab8"
+author: "jason grahn"
+date: "11/24/2018"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(psych)
+library(modelr)
+library(moderndive)
+library(infer)
+library(corrgram)
+```
+
