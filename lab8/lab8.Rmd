@@ -385,24 +385,84 @@ The model is: 3.385 + (ethnicitynot minority) x0.179 + (languagenon-english) x -
 score=
   +β^0 
   +β^1×ethnicity_not_minority 
-  +β^2×gender_male 
   +β^3×language_non−english 
   +β^4+×class_perc_eval 
   +β^5×class_credits_one 
-  +β^6×bty_avg 
+  +β^6×bty_f1upper
   +β^7×picture_color_colored
 
 ##16
 ###Verify that the conditions for this model are reasonable using diagnostic plots.
+```{r}
+p_hack_regression_points <- get_regression_points(rms.phack.model)
 
+histo <- p_hack_regression_points %>% 
+  ggplot() + 
+  theme_light() +
+  geom_histogram(aes(residual), fill = "lightgrey", color = "darkgrey") +
+  labs(title = "Histogram of residuals")
+
+qqplot <- p_hack_regression_points %>% 
+  ggplot(aes(sample = residual)) +
+  theme_light() +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  labs(title = "QQ of residuals")
+
+absolute <- p_hack_regression_points %>% 
+  ggplot() + 
+  theme_light() +
+  geom_point(aes(score_hat, abs(residual))) + 
+  labs(title = "Absolute values of residuals against fitted values")
+
+plot_grid(histo, qqplot, absolute)
+
+eth <- evals %>% 
+  ggplot() +
+  geom_boxplot(aes(ethnicity, score))
+  
+gen <- evals %>% 
+  ggplot() +
+  geom_boxplot(aes(gender, score))
+  
+lan <- evals %>% 
+  ggplot() +
+  geom_boxplot(aes(language, score)) 
+
+cre <- evals %>% 
+  ggplot() +
+  geom_boxplot(aes(language, score)) 
+
+pic <- evals %>% 
+  ggplot() +
+  geom_boxplot(aes(pic_color, score)) 
+
+bty <- evals %>% 
+  ggplot() +
+  geom_boxplot(aes(factor(bty_f1upper), score)) 
+
+library(cowplot)
+plot_grid(eth, gen, lan, cre, pic, bty, labels = c("A", "B", "C", "D", "E", "F"))
+
+```
+
+    * The residuals of the model is nearly normal as visible in the histogram and QQ plot; with a left skew.
+    * Fitted vs absolute values are close. 
+    * We assume independence based on study method.
+    * boxplots show linearity related to categorical variables. 
 
 ##17
 ###The original paper describes how these data were gathered by taking a sample of professors from the University of Texas at Austin and including all courses that they have taught. Considering that each row represents a course, could this new information have an impact on any of the conditions of linear regression?
 
+No. Even if the course is being taught by the same professor, Class courses are independent of each other so evaluation scores from one course is indpendent of the other
 
 ##18
 ###Based on your final model, describe the characteristics of a professor and course at University of Texas at Austin that would be associated with a high evaluation score.
 
+A non minority male, who speaks English, teaches a one credit class, and has a high percent of students who evaluated.
+
 
 ##19
 ###Would you be comfortable generalizing your conclusions to apply to professors generally (at any university)? Why or why not?
+
+No, I most definitely would not as I can think of at least a few additional variables that might have an impact the scores of instructors outside predominantly white / male Austin, Texas. For example, per-capita of minorities in a university city might have an impact on the scores of minority professors. The per-capita _gender of students_ may play an impact of scores for the gender of professors. Just these two alone give me reason to pause.  The sampling of professors from Austin is not representative of the country as a whole; and most _certainly_ the students at a university in Austin are not representative of the country as a whole! 
