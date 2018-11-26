@@ -265,38 +265,132 @@ summary(m_bty_rank)
 multiLines(m_bty_rank)
 ```
 
-For a categorical variable with greater than two levels, R creates additional variables for every level greater than 1. Here, we've created `ranktenure track` and `ranktenured`. 
-
-```{r}
-#################################
-#                               #
-# this is where you've left off #
-#                               #
-#################################
-```
-
-The interpretation of the coefficients in multiple regression is little bit different from that of simple regression. The estimate for bty_avg (0.06783) shows how much higher a group of professors is expected to score if they have a beauty rating that is one point higher while holding all other variables constant. In this case, only professors of the same rank with bty_avg scores that are one point apart.
-
+For a categorical variable with greater than two levels, R creates additional variables for every level greater than 1. Here, we've created `ranktenure track` and `ranktenured`. As a result, we must interpret the coefficients a little differently. With "teaching" rank as the base 0, knowing what rank-level a given professor has (apparently) negative consequences to their output score.
 
 ##11
 ###Which variable would you expect to have the highest p-value in this model? Why? Hint: Think about which variable would you expect to not have any association with the professor score.
 
+I think `pic_color` has the least association with `score` because the color of their picture would have nothing to do with how well (or not) they teach. I choose that.
 
 ##12
 ###Check your suspicions from the previous exercise. Include the model output in your response.
+```{r kitchen sink model}
+kitchen.sink <- lm(score ~ ., data = evals)
 
+get_regression_table(kitchen.sink) %>% 
+  arrange(desc(p_value)) %>% 
+  select(term, p_value) %>% 
+  mutate(is_max = if_else(p_value == (max(p_value)),
+                          TRUE,
+                          FALSE)) %>% 
+  filter(is_max == TRUE)
+
+summary(kitchen.sink)
+```
+
+I was wrong; `pic_color` is not the highest (worst) p-value for the model. The highest p-value comes from `cls_profssingle` with a p-value of *0.778*. This originally comes from the `cls_prof` variable from the data. 
 
 ##13
 ###Interpret the coefficient associated with the ethnicity variable.
+```{r}
+get_regression_table(kitchen.sink) %>% 
+  filter(term == "ethnicitynot minority")
+```
 
+The `ethnicity` variable was changed to `ethnicitynot minority` because it is a categorical variable and selected _minority_ as the base. If other components of the model are equal, non-minority professors will score approximately 0.123 higher than a minority professor. Note that this also has a fairly high p_value and may be removed from the model with further analysis.
 
 ##14
 ###Drop the variable with the highest p-value and re-fit the model. Did the coefficients and significance of the other explanatory variables change? (One of the things that makes multiple regression interesting is that coefficient estimates depend on the other variables that are included in the model.) If not, what does this say about whether or not the dropped variable was collinear with the other explanatory variables?
+```{r}
+#dropping cls_prof from the model
+no.cls_profssingle <- lm(score ~ rank + ethnicity + gender + language + age + cls_perc_eval + cls_did_eval + cls_students + cls_level + cls_credits + bty_f1lower + bty_f1upper + bty_f2upper + bty_m1lower + bty_m1upper + bty_m2upper + bty_avg +  pic_outfit + pic_color, data = evals)
 
+summary(no.cls_profssingle)
+```
+
+Yes, dropping cls_prof from the model changed the p-value and estimates of the variables, some greater than others. I also notice that our Adjusted R-sq has increased. 
 
 ##15
 ###Using backward-selection and p-value as the selection criterion, determine the best model. You do not need to show all steps in your answer, just the output for the final model. Also, write out the linear model for predicting score based on the final model you settle on.
 
+The final model, using backward steps to p-hack our way to significance under approx 0.05 is: 
+
+```{r start your p hacking engines}
+#get_regression_table(lm(score ~ ethnicity + gender + language + cls_perc_eval + cls_credits + bty_f1upper + pic_color,data = evals))
+#arrange(desc(p_value))
+p.hack.backstep <- lm(score ~ ethnicity + gender + language + cls_perc_eval + cls_credits + bty_f1upper + pic_color,data = evals)
+summary(p.hack.backstep)
+```
+
+Alternatively, we can use `fastbw()` from the `rms` package to automate this:
+
+```{r or automate our p hacking engines}
+library(rms)
+kitchen.sink.2 <- ols(score ~ ., data=evals)
+
+rms.phack.ols <- fastbw(fit=kitchen.sink.2, 
+                        rule="p", 
+                        sls=0.5)
+rms.phack.ols
+```
+
+This results in the same final model with a lot less coding, resulting in less errors.
+
+```{r output of p hacking}
+rms.phack.model <- lm(score ~ ethnicity + language + gender + cls_perc_eval + cls_credits + bty_f1upper + pic_color, data = evals)
+summary(rms.phack.model)
+```
+
+But we all know that P-hacking our way to significance is bad practice and can result in over-fitting. Alternatively, we use `step()` from the stats package to run: _step(kitchen.sink, direction = "backward")_ which gives us a model with the lowest AIC of -642.28 and a higher Adjusted R-squared of 0.1821.
+
+    Step:  AIC=-642.28
+    score ~ rank + ethnicity + gender + language + age + cls_perc_eval + 
+        cls_credits + bty_f1lower + bty_f1upper + bty_f2upper + bty_avg + 
+        pic_outfit + pic_color
+
+
+                    Df Sum of Sq    RSS     AIC
+    <none>                       108.39 -642.28
+    - pic_outfit     1    0.5065 108.89 -642.12
+    - bty_f1lower    1    0.5212 108.91 -642.06
+    - rank           2    1.2018 109.59 -641.18
+    - ethnicity      1    1.0217 109.41 -639.94
+    - language       1    1.0886 109.48 -639.65
+    - bty_avg        1    1.4304 109.82 -638.21
+    - bty_f2upper    1    1.7306 110.12 -636.95
+    - age            1    1.9987 110.39 -635.82
+    - pic_color      1    2.2613 110.65 -634.72
+    - bty_f1upper    1    2.2891 110.68 -634.60
+    - cls_perc_eval  1    2.3203 110.71 -634.47
+    - cls_credits    1    4.9069 113.30 -623.78
+    - gender         1    5.7484 114.14 -620.35
+
+    Call:
+    lm(formula = score ~ rank + ethnicity + gender + language + age + 
+        cls_perc_eval + cls_credits + bty_f1lower + bty_f1upper + 
+        bty_f2upper + bty_avg + pic_outfit + pic_color, data = evals)
+
+```{r but AIG modelling is better}
+summary(
+  lm(formula = score ~ rank + ethnicity + gender + language + age + 
+        cls_perc_eval + cls_credits + bty_f1lower + bty_f1upper + 
+        bty_f2upper + bty_avg + pic_outfit + pic_color, data = evals)
+)
+```
+
+But fine, since we're using p-hacking, the rest of the code will be based on `lm(score ~ ethnicity + language + cls_perc_eval + cls_credits + bty_f1upper + pic_color)`. 
+
+The model is: 3.385 + (ethnicitynot minority) x0.179 + (languagenon-english) x -0.22 + (cls_perc_eval)	x 0.005 + (cls_creditsone credit)	x 0.498 + (bty_f1upper) x 0.062 + (pic_colorcolor) x -0.185
+
+score=
+  +β^0 
+  +β^1×ethnicity_not_minority 
+  +β^2×gender_male 
+  +β^3×language_non−english 
+  +β^4+×class_perc_eval 
+  +β^5×class_credits_one 
+  +β^6×bty_avg 
+  +β^7×picture_color_colored
 
 ##16
 ###Verify that the conditions for this model are reasonable using diagnostic plots.
