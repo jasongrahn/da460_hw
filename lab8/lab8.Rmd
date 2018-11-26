@@ -378,7 +378,7 @@ summary(
 )
 ```
 
-But fine, since we're using p-hacking, the rest of the code will be based on `lm(score ~ ethnicity + language + cls_perc_eval + cls_credits + bty_f1upper + pic_color)`. 
+But fine, since we're using p-hacking, the rest of the code will be based on: `lm(score ~ ethnicity + language + cls_perc_eval + cls_credits + bty_f1upper + pic_color)`. 
 
 The model is: 3.385 + (ethnicitynot minority) x0.179 + (languagenon-english) x -0.22 + (cls_perc_eval)	x 0.005 + (cls_creditsone credit)	x 0.498 + (bty_f1upper) x 0.062 + (pic_colorcolor) x -0.185
 
@@ -394,6 +394,8 @@ score=
 ##16
 ###Verify that the conditions for this model are reasonable using diagnostic plots.
 ```{r}
+library(cowplot) #gunna need to combine some plots here. 
+
 p_hack_regression_points <- get_regression_points(rms.phack.model)
 
 histo <- p_hack_regression_points %>% 
@@ -417,50 +419,50 @@ absolute <- p_hack_regression_points %>%
 
 plot_grid(histo, qqplot, absolute)
 
-eth <- evals %>% 
+ethn <- evals %>% 
   ggplot() +
   geom_boxplot(aes(ethnicity, score))
   
-gen <- evals %>% 
-  ggplot() +
-  geom_boxplot(aes(gender, score))
-  
-lan <- evals %>% 
+lang <- evals %>% 
   ggplot() +
   geom_boxplot(aes(language, score)) 
 
-cre <- evals %>% 
+cls_cre <- evals %>% 
   ggplot() +
-  geom_boxplot(aes(language, score)) 
+  geom_boxplot(aes(cls_credits, score)) 
 
-pic <- evals %>% 
+cls_perc <- evals %>% 
+  ggplot() +
+  geom_point(aes(cls_perc_eval, score))
+
+pic_col <- evals %>% 
   ggplot() +
   geom_boxplot(aes(pic_color, score)) 
 
-bty <- evals %>% 
+bty_f1 <- evals %>% 
   ggplot() +
   geom_boxplot(aes(factor(bty_f1upper), score)) 
 
-library(cowplot)
-plot_grid(eth, gen, lan, cre, pic, bty, labels = c("A", "B", "C", "D", "E", "F"))
+plot_grid(ethn, lang, cls_cre, pic_col, bty_f1, cls_perc, 
+          labels = c("A", "B", "C", "D", "E", "F"))
 
 ```
 
     * The residuals of the model is nearly normal as visible in the histogram and QQ plot; with a left skew.
     * Fitted vs absolute values are close. 
     * We assume independence based on study method.
-    * boxplots show linearity related to categorical variables. 
+    * Boxplots show linearity related to categorical variables (bty_f1upper is a bit off, but it's nearly linear, which is ok). 
+    * Cls_perc_eval is a fuzzy scatter plot, and not very linear, but still a valuable predictor. 
 
 ##17
 ###The original paper describes how these data were gathered by taking a sample of professors from the University of Texas at Austin and including all courses that they have taught. Considering that each row represents a course, could this new information have an impact on any of the conditions of linear regression?
 
-No. Even if the course is being taught by the same professor, Class courses are independent of each other so evaluation scores from one course is indpendent of the other
+Not likely. If the same course is taught by the same professor, the courses are independent of one another and thus evaluations are independent. That said, a worthwhile variable may be something that relates a student having had the instructor previously; or a longevity study for subset of teachers over time (something that might be scrubbed from ratemyprofessors.com). 
 
 ##18
 ###Based on your final model, describe the characteristics of a professor and course at University of Texas at Austin that would be associated with a high evaluation score.
 
-A non minority male, who speaks English, teaches a one credit class, and has a high percent of students who evaluated.
-
+A non minority male, who speaks English, teaches a one credit class, has a picture in black & white, has high ratings from upper level _females_ and has a high percent of students who evaluated. This makes me wonder if females drive the beauty scoring, or if female students drive evaluation scores in general.
 
 ##19
 ###Would you be comfortable generalizing your conclusions to apply to professors generally (at any university)? Why or why not?
