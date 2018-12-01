@@ -1,0 +1,160 @@
+---
+title: "final"
+author: "jason grahn"
+date: "11/30/2018"
+output: word_document
+---
+
+#The R Parts
+```{r setup load packages, echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)    #tidy tools
+library(psych)        
+library(modelr)       #modeling tools
+library(moderndive)   #other modeling tools
+library(infer)        #tidy inference statistics tools
+#library(corrgram)    
+library(rms)          #automate p-hacking / back/forward regression
+library(cowplot)      #combining ggplots into groups
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+download.file("http://www.openintro.org/stat/data/ames.RData", destfile = "ames.RData")
+load("ames.RData")
+```
+
+
+##1 
+###Download run10.csv (or run10.txt) and read corresponding data into R.  
+```{r load data, echo=TRUE, message=FALSE, warning=FALSE}
+library(readr)
+R10 <- read_csv("final/run10.csv", na = "NA")
+#glimpse(R10)
+```
+
+##2
+###Calculate the population mean and standard deviation for divTot. Apply rep function and for loop to collect 50 simple random samples of size 100 from divTot, and then use these stored statistics to calculate 50 confidence intervals of 95% confidence level for population mean. Include both the code/command and the output/graph. 
+```{r the old school way}
+population <- R10$divTot
+
+mean(population, na.rm = TRUE)
+SD(population, na.rm = TRUE)
+
+set.seed(40)
+
+ci.95 <- qnorm(1 - 0.05/2)
+
+samp_mean <- rep(NA, 50)
+samp_sd <- rep(NA, 50)
+
+n <- 100
+
+for(i in 1:50){
+  samp <- sample(population, n) 
+  samp_mean[i] <- mean(samp)    
+  samp_sd[i] <- sd(samp)        
+}
+
+lower_vector <- samp_mean - ci.95 * samp_sd / sqrt(n) 
+upper_vector <- samp_mean + ci.95 * samp_sd / sqrt(n)
+```
+
+
+```{r the tidy way, eval=FALSE, include=FALSE}
+population.tidy <- R10 %>% 
+  select(divTot) 
+
+pop.mean.sd <- population.tidy %>% 
+  summarise(pop.mean = mean(population.tidy$divTot, na.rm = TRUE),
+            pop.sd = SD(population.tidy$divTot, na.rm = TRUE))
+pop.mean.sd
+
+set.seed(40)
+class.samp.tidy <- population.tidy %>% 
+  rep_sample_n(size = 100, reps = 50)
+
+n = 100
+a <- 1 - 0.05/2
+ci.95 <- qnorm(a)
+
+class.samp.tidy %>% 
+  group_by(replicate) %>% 
+  #build our confidence intervals
+  summarise(sample_mean = mean(divTot),
+            standard_dev = SD(divTot),
+            se = standard_dev/sqrt(n),
+            lower = sample_mean - ci.95 * se,
+            upper = sample_mean + ci.95 * se) %>% 
+
+```
+
+
+##3
+###Apply function plot_ci to display all the 50 confidence intervals in question (2). What proportion of your confidence intervals include the true population mean? Is this proportion consistent with the confidence level? Why or why not? Include both the code/command and the output/graph. 
+```{r}
+plot_ci(lower_vector, upper_vector, mean(population, na.rm = TRUE))
+
+p <- 1-(3/50)
+p
+```
+
+Only 3 CIs do not include the population mean. Therefore, `r p*100` percent of the CIs include the true population mean. This is fairly close to the selected confidence interval but not exact. This is due to the non-exact nature of confidence intervals. They predict a range that is _likely_ to contain the true value (as likely as the CI level), but not always.
+
+##4
+###Make a side-by-side boxplot of gender and divTot. What does the plot highlight about the relationship between these two variables? Include both the code/command and the output/graph. 
+```{r}
+R10 %>% 
+  filter(is.na(divTot) == FALSE) %>% 
+  ggplot() +
+  geom_boxplot(aes(gender, divTot))
+```
+
+The boxplots showcase the differences in symmetry of divToT between Females and Males. Females have a much higher median than for Males as well as an increased distribution and range. We also see that neither category has any outliers.
+
+##5
+###Calculate and a 95% confidence intervals for the difference between the mean of male divTot and the mean of female divTot, and interpret. Include both the code/command and the output/graph. 
+```{r include=FALSE}
+source("http://www.openintro.org/stat/slides/inference.R")
+```
+
+
+```{r message=FALSE, warning=FALSE}
+inference(y = R10$divTot,
+          x = R10$gender, 
+          est="mean", 
+          type="ci",
+          null=0, 
+          alternative = "twosided",
+          method="theoretical")
+```
+
+We are 95% confident the difference that the mean of `divTot` between males and females is between `702.5492` and `743.1931`.
+
+##6
+###Conduct a hypothesis test at 95% significant level evaluating whether the mean of male divTot is different from the mean of female divTot? Make sure you indicate the hypotheses, the test rest, and the conclusion(s) clearly. Include both the code/command and the output/graph.
+
+First we check for appropriate size for inferrence.
+```{r inference test}
+#how many values available from n to determine if 
+r.rows <- nrow(R10)
+
+#test conditions
+#This also requires a sample size of np >= 10 and n(1-p)>=10 to determine if n is appropriate size
+R10_condition_1 <- if_else((r.rows*0.05) >= 10, "Sample size is large and passes condition 1", "Sample size is not large and does not pass condition 1") 
+        
+R10_condition_2 <- if_else((r.rows*0.95) >= 10, "Sample size is large and passes condition 2", "Sample size is not large and does not pass condition 2")
+
+R10_condition_1
+R10_condition_2
+```
+
+```{r formula for discussion}
+males <- R10 %>% 
+  filter(gender == "M") %>%  
+  select(divTot)
+
+females <- R10 %>% 
+  filter(gender == "F") %>%  
+  select(divTot)
+  
+t.test(males$divTot, females$divTot)
+```
