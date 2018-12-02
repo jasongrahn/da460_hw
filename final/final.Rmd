@@ -5,7 +5,6 @@ date: "11/30/2018"
 output: word_document
 ---
 
-#The R Parts
 ```{r setup load packages, echo=TRUE, message=FALSE, warning=FALSE}
 library(tidyverse)    #tidy tools
 library(psych)        
@@ -15,19 +14,21 @@ library(infer)        #tidy inference statistics tools
 #library(corrgram)    
 library(rms)          #automate p-hacking / back/forward regression
 library(cowplot)      #combining ggplots into groups
+library(broom)        #modeling utilities
 ```
 
+#The R Parts Section 1
 ```{r message=FALSE, warning=FALSE, include=FALSE}
+#load that ames dataset so I can use the plot_ci() function
 download.file("http://www.openintro.org/stat/data/ames.RData", destfile = "ames.RData")
 load("ames.RData")
 ```
-
 
 ##1 
 ###Download run10.csv (or run10.txt) and read corresponding data into R.  
 ```{r load data, echo=TRUE, message=FALSE, warning=FALSE}
 library(readr)
-R10 <- read_csv("final/run10.csv", na = "NA")
+R10 <- read_csv("run10.csv", na = "NA")
 #glimpse(R10)
 ```
 
@@ -73,8 +74,6 @@ class.samp.tidy <- population.tidy %>%
   rep_sample_n(size = 100, reps = 50)
 
 n = 100
-a <- 1 - 0.05/2
-ci.95 <- qnorm(a)
 
 class.samp.tidy %>% 
   group_by(replicate) %>% 
@@ -113,6 +112,7 @@ The boxplots showcase the differences in symmetry of divToT between Females and 
 ##5
 ###Calculate and a 95% confidence intervals for the difference between the mean of male divTot and the mean of female divTot, and interpret. Include both the code/command and the output/graph. 
 ```{r include=FALSE}
+#load up that inference.R from openintro to use their inference() function
 source("http://www.openintro.org/stat/slides/inference.R")
 ```
 
@@ -133,7 +133,7 @@ We are 95% confident the difference that the mean of `divTot` between males and 
 ###Conduct a hypothesis test at 95% significant level evaluating whether the mean of male divTot is different from the mean of female divTot? Make sure you indicate the hypotheses, the test rest, and the conclusion(s) clearly. Include both the code/command and the output/graph.
 
 First we check for appropriate size for inferrence.
-```{r inference test}
+```{r first inference test}
 #how many values available from n to determine if 
 r.rows <- nrow(R10)
 
@@ -147,6 +147,9 @@ R10_condition_1
 R10_condition_2
 ```
 
+•	H0 = The average `divTot` of males and females the same.
+•	HA = The average `divTot` of males and females is not the same.
+
 ```{r formula for discussion}
 males <- R10 %>% 
   filter(gender == "M") %>%  
@@ -155,6 +158,319 @@ males <- R10 %>%
 females <- R10 %>% 
   filter(gender == "F") %>%  
   select(divTot)
-  
-t.test(males$divTot, females$divTot)
+
+t.test(females$divTot, males$divTot)
 ```
+
+With a studentized T-test score of `69.718` and p-value less than `2.2e-16`, we reject the null hypothesis and can safely conclude that there is a significant difference between the male and female means of `divTot`. 
+
+#The R Parts Section 2
+##1
+###Download smoking.csv (or smoking.txt) and read corresponding data into R. Example command in R: MyData<- read.csv(file="path/TheDataIWantToReadIn.csv",header=TRUE, sep=","). Note: use forward slash “/” instead of backward slash“\” in the path. Make sure to include the code/command.
+```{r message=FALSE, warning=FALSE}
+smoking <- read_csv("smoking.csv")
+glimpse(smoking)
+```
+
+##2
+###Create a new data frame that contains only the rows in smoking.csv associated with male smokers (Male for gender and Yes for smoke).  
+```{r male smoker dataframe}
+male_smokers <- subset(smoking, 
+                       smoking$gender == "Male" & 
+                         smoking$smoke == "Yes")
+
+male.smokers <- smoking %>% 
+  filter(gender == "Male",
+         smoke == "Yes")
+```
+
+Then, calculate the proportion of Divorced in maritalStatus. Include both the code/command and the output/graph.
+```{r}
+tot.smokers <- nrow(male.smokers)
+
+status.males <- male.smokers %>% 
+  group_by(maritalStatus) %>% 
+  summarise(count = n(),
+            prop = count/tot.smokers)
+
+divorced.males <- status.males$prop[1]
+```
+
+The proportion of divorced maritial status within males is `r divorced.males`, or `r 0.0855615 * 100`%.
+
+##3
+###Check if the conditions for inference are reasonable. If so, apply inference function to calculate the standard error and construct a 95% confidence interval for the proportion of Divorced in maritalStatus. Include both the code/command and the output/graph.
+```{r second inference test}
+#how many values available from n to determine if 
+m.rows <- nrow(male.smokers)
+
+#test conditions
+#This also requires a sample size of np >= 10 and n(1-p)>=10 to determine if n is appropriate size
+msmokers_condition_1 <- if_else((m.rows * divorced.males) >= 10, 
+                                "Sample size is large and passes condition 1", 
+                                "Sample size is not large and does not pass condition 1") 
+        
+msmokers_condition_2 <- if_else((m.rows * divorced.males) >= 10, 
+                                "Sample size is large and passes condition 2", 
+                                "Sample size is not large and does not pass condition 2")
+
+msmokers_condition_1
+msmokers_condition_2
+```
+
+The volume of male smokers enough to pass both the first and second conditions for inference. 
+```{r}
+div.infer <- male.smokers %>% 
+  mutate(if_divorced = if_else(maritalStatus == "Divorced", TRUE, FALSE))  
+
+inference(div.infer$if_divorced,
+          est = "proportion",
+          type = "ci",
+          method = "theoretical",
+          success = "TRUE")
+```
+
+The 95% confidence interval for the proportion of males that smoke that are also divorced is between 0.0455 and 0.1257.  We can also state this as:
+
+We are 95% confident that the true population proportion for males that smoke and are divorced is between `0.0455` and `0.1257`.  
+
+##4
+###Based on the R output in question (3), what is the standard error and the margin of error for the estimate of the proportion of Divorced in maritalStatus? 
+```{r}
+#The standard error is part of the output in question 3.
+standard.error <- 0.0205
+
+#one way is to use the SE from above and manufacture the Margin of error
+margin.error <- ci.95 * standard.error
+margin.error
+```
+
+The standard error is `0.0205`.
+The margin of error is `r round(margin.error,4)`
+
+##5
+###Use simulation to show how the proportion affect the margin of error. Describe the relationship between the proportion and the margin of error. Include both the code/command and the output/graph. 
+```{r}
+p <- seq(0,1,0.01)
+n <- 1000
+me <- 2*sqrt(p*(1-p)/n)
+
+plot(me~p, ylab="Margin of Error", xlab="Population proportion")
+```
+This is nearly the exact same question we had in lab6. The relationship between proportion `p` and margin of error `me` is a non-linear arc. We see the proportion of 0.5 is the proportion with the peak margin of error, following the arc from 0 ME at 0 proportion to 0 ME at 1.0 proportion (100%). 
+
+##6
+###Apply for loop to simulate the process of drawing 300 samples of size 1000 from a population with a true Divorced proportion of 0.3. For each of the 3000 samples, compute p-hat and then plot a histogram to visualize the distribution. Describe the sampling distribution of the sample proportions. Be sure to note the center, spread, and shape clearly. Include both the code/command and the output/graph.
+```{r}
+p<-0.3
+n<-1000
+p_hat<-rep(0,300)
+
+set.seed(99)
+for(i in 1:300){
+  samp <- sample(c("divorced", "non-divorced"),
+                 n,
+                 replace = TRUE,
+                 prob=c(p,1-p))
+  p_hat[i] <- sum(samp=="divorced")/n}
+
+hist(p_hat,breaks=100)
+
+psych::describe(p_hat)
+```
+
+The distribution of the p-hat samples are approximately normal. The median and mean are 0.3, which is our population proportion of divorcees. The distribution has a standard deviation of 0.01. The range is 0.09 with a very slight left skew at -0.05.
+
+#The R Parts Section 3
+##1
+###Download diamonds.csv (or diamonds.txt) and read corresponding data into R.  Make sure to include the code/command.
+```{r message=FALSE, warning=FALSE}
+diamonds2 <- read_csv("diamonds.csv")
+```
+
+##2
+###What type of plot is the most appropriate one to display the relationship between price and carat? Plot this relationship using the variable carat as the predictor. Does the relationship look linear? Include both the code/command and the output/graph.
+```{r}
+diamonds2 %>% 
+  ggplot(aes(carat, price)) +
+  geom_point() +
+  geom_smooth(method = lm)
+```
+
+The scatterplot is the most appropriate type of chart to show the relationship between two continuous variables. The relationship does _not_ look linear as the price points ramps up rapidly from 1 carat onward. As we draw the linear line, we see that after 3 carats there's no way a linear model would be able to predict the value of larger carat diamonds. 
+
+##3
+###If the relationship looks linear in question (2), what is the correlation coefficient? Interpret this result. Include both the code/command and the output/graph 
+
+The relationship does not appear linear as previously stated, but let's run through these questions anyway. 
+```{r}
+cor(diamonds2$price, diamonds2$carat)
+```
+
+The correlation coefficient between price and carat is approximately 0.922, which is a strong positive relationship. This is likely due to the clustering of data around the lower carat levels. 
+
+##4
+###Fit a simple linear model (use carat to predict price). 
+```{r}
+dm1 <- lm(price ~ carat,
+         data = diamonds2)
+
+summary(dm1)
+```
+
+###Using the estimates from the R output, write down the regression equation. 
+The regression equation is `Y` = -2256 + 7756*`X`.
+
+###What are the y-intercept and the slope? 
+The y-intercept is `-2256.36` slope is `7756.43`. 
+
+###Interpret the regression line. 
+With every positive unit change of 1 `carat`, `price` increases by `7756.43` units, minus the intercept value of `-2256.36`.
+
+###Is variable carat significant? Why or why not? 
+Yes, the variable `carat` is significant because it has a p-value of `<2e-16`. 
+
+What is the coefficient of determination? Interpret the results. Include both the code/command and the output/graph.
+The coefficient of determination is `r-squared` at `0.8493`, which states that approximately 84.93% of the variation in price is explained by the variable `carat`. 
+
+##5
+###Fit a multiple linear model with carat, depth, and table as independent variables, and variable price as dependent variable.
+```{r}
+dm2 <- lm(price ~ carat + depth + table, 
+          data = diamonds2)
+summary(dm2)
+```
+
+###Using the estimates from the R output, write down the regression equation. What are the y-intercept and the slopes? Interpret the regression line. 
+The regression equation:
+`Y`= 13003.441 + 7858.771`carat` - 151.236`depth` - 104.473`table`. 
+
+The y-intercept is 13003.441, there are 3 slope factors: 
+
+    * carat: 7858.771
+    * depth: - 151.236
+    * table: - 104.473
+    
+When `carat` increases by 1, price increases by 7858.771; when `depth` increases by 1, price decreases by 151.236, and when `table` increase by 1, price decreases by 104.473. 
+
+###Are all the independent variables in the model significant? Why or why not? 
+Yes, it appears that all variables in the current model are significant as they each have a p-value less than <2e-16 and are valid predictors of `price`.
+
+What is the coefficient of determination? Interpret the result, and compare it with question (4). 
+The coefficient of determination is `0.8537` which states approximately 85.37% of the variation in price is explained by the variables in this model; `carat`, `depth`, `table`. This model slightly improves on the single-variable model developed in question (4) by about 0.44%.
+
+##6
+###Using backward-selection and p-value as the selection criterion, determine the best model. You do not need to show all steps in your answer, just the output for the final model. Also, write down the final regression equation and interpret it. Include both the code/command and the output/graph.
+```{r message=FALSE, warning=FALSE}
+#using the rms library to automate this
+library(rms)
+```
+
+```{r}
+#manually
+p.hack.backstep <- lm(price ~ carat + cut + color + clarity + depth + table + x, 
+                        data = diamonds2)
+summary(p.hack.backstep)
+
+#or this, the better way, using RMS
+kitchen.sink <- ols(price ~ ., data = diamonds2)
+rms.phack.ols <- fastbw(fit = kitchen.sink, 
+                        rule = "p", 
+                        sls = 0.05)
+rms.phack.ols
+```
+
+The final regression model is: 
+
+Price = 2366.09 + (carat)11256.97 + (cut=Good)580.24 + (cut=Ideal)833.26 
+      + (cut=Premium)762.76 + (cut=VeryGood)726.82 - (color=E)209.24 - (color=F)272.83 
+      - (color=G)481.94 -(color=H)980.12 -(color=I)1466.18 -(color=J)2369.5 
+      + (clarity=IF)5344.34 + (clarity=SI1)3664.91 + (clarity=SI2)2702.08 + (clarity=VS1)4577.59 
+      + (clarity=VS2)4266.61 + (clarity=VVS1)5007.06 + (clarity=VVS2)4950.17 -(depth)66.77 
+      - (table)26.46 -(x)1029.48
+
+The intercept of the final model is 2366.09.
+
+Cut, color, and clarity are all categorical variables, which is why the model splits these out into separate variables depending on the categorical level. 
+
+In this ordinary linear regression model, each slope next to a variable denotes the number of units that price will change changes when each variable changes by one unit. Because of the length of the model, I'll summarize by example: when carat increases by one, price increases by 11256.97; when cut=Good increases by one, price increases by 580.24; if the color is colorJ, the price decreases by 2469.504; and so on. 
+
+##7
+###What are the conditions to validate the model? Apply appropriate plots to check these conditions. Are all conditions passed? Is the model valid? Why or why not? Include both the code/command and the output/graph.
+```{r}
+#need our regression points
+p_hack_regression_points <- get_regression_points(p.hack.backstep)
+
+diamonds2 <- diamonds2 %>% 
+  add_residuals(p.hack.backstep, "residual") %>% 
+  add_predictions(p.hack.backstep, "pprice")  
+```
+
+
+```{r}
+#histogram of resids
+histo <- diamonds2 %>% 
+  ggplot() + 
+  theme_light() +
+  geom_histogram(aes(residual), fill = "lightgrey", color = "darkgrey", 
+                 bins = 100) +
+  labs(title = "Histogram of residuals") 
+
+#qqplot of resids
+qqplot <- diamonds2 %>% 
+  ggplot(aes(sample = residual)) +
+  theme_light() +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  labs(title = "QQ of residuals")
+
+absolute <- diamonds2 %>% 
+  ggplot() + 
+  theme_light() +
+  geom_point(aes(pprice, abs(residual))) + 
+  labs(title = "Absolute values of residuals against predicted values")
+
+#predictions vs actuals
+predict <- diamonds2 %>% 
+  ggplot() + 
+  theme_light() +
+  geom_point(aes(price, pprice)) +
+  labs(title = "Predicted v actual price")
+
+plot_grid(histo, qqplot, absolute, predict)
+
+#scatter distribtuion of residuals
+resid <- diamonds2 %>% 
+  ggplot() +
+  theme_light() + 
+  geom_point(aes(carat, residual))
+
+#boxplots of categorical variables vs residuals
+bcut <- ggplot(diamonds2, aes(cut, residual)) + 
+  theme_light() +
+  geom_boxplot() 
+
+bcolor <- ggplot(diamonds2, aes(color, residual)) + 
+  theme_light() +
+  geom_boxplot() 
+
+bclarity <- ggplot(diamonds2, aes(clarity, residual)) + 
+  theme_light() +
+  geom_boxplot() 
+
+plot_grid(resid, bcut, bcolor, bclarity)
+```
+
+* The residuals of the model are nearly normal in the histogram with a slightly positive right skew (`skew` factor of 0.58)
+* The QQ plot leads me to believe this model is not trustworthy for predicting values on the upper and lower quadrants. 
+* We assume independence based on study method.
+* Boxplots show linearity related to categorical variables, but there certainly are a lot of outliers.  
+* `Carat` vs residuals is certainly not evenly distributed, but it is the strongest predictor we have for the values that it DOES serve. 
+* The `Predicted v actual price` plot shows us we probably could have done a log transform on some object for better predictions.
+
+We have likely overfit the model. Overall, I think this model is acceptable for only a small, centered, bundle of the data. it does not accurately predict final price for the outer ends of prices.
+
+##8
+###Based on your final model, what are the most important factors that influence the selling price of a diamond? Why?
+
+No code is required to answer. Based on the final model, the most _important_ factors for the selling price of a diamond are the carat of the diamond (the weight), the clarity, the cut, and the color; in that order. Carat has the largest point estimate change of all the supplied variables, clarity adds value to price in thousands and only increases value, cut also only adds to price but less-so than clarity; and finally color.  
